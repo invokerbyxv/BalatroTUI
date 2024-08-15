@@ -1,17 +1,17 @@
-use core::{deck::Deck, run::{Run, RunProperties}};
-use std::sync::{Arc, RwLock};
+use std::error::Error;
+
+use game::Game;
 
 pub mod core;
+pub mod event;
+pub mod game;
+pub mod tui;
 
-fn main() {
-    // Select a deck
-    let deck = Deck::standard();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    // Start Game
+    let mut game = Game::new();
+    let _ = game.start().await;
 
-    // Start a run
-    let mut run = Run {
-        deck: Arc::new(RwLock::new(deck)),
-        properties: RunProperties::default(),
-        ..Default::default()
-    };
-    run.start().unwrap();
+    Ok(())
 }
