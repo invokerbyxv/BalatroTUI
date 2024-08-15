@@ -2,6 +2,9 @@ use std::{cmp::{min, Reverse}, error::Error, fmt::{Display, Formatter, Result as
 use once_cell::sync::Lazy;
 use rand::{thread_rng, seq::SliceRandom};
 use itertools::{Either, Itertools};
+use ratatui::{layout::{Constraint, Layout, Rect}, Frame};
+
+use crate::{event::Event, tui::TuiComponent};
 
 use super::card::{Card, Suit};
 
@@ -118,5 +121,22 @@ impl Sortable for Deck {
     #[inline]
     fn sort_by_rank(&mut self) {
         self.cards.sort_by_key(|c| (Reverse(c.rank), c.suit));
+    }
+}
+
+impl TuiComponent for Deck {
+    #[inline]
+    fn draw(&self, frame: &mut Frame, rect: Rect) {
+        let deck_layout = Layout::horizontal(vec![Constraint::Fill(1); self.cards.len()]).split(rect);
+        for (idx, card) in self.cards.iter().enumerate() {
+            card.draw(frame, deck_layout[idx]);
+        }
+    }
+
+    #[inline]
+    fn handle_events(&mut self, event: Event) {
+        for card in &mut self.cards {
+            card.handle_events(event);
+        }
     }
 }
