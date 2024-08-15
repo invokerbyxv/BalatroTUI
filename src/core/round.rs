@@ -1,5 +1,9 @@
 use std::{error::Error, sync::{Arc, RwLock}};
 
+use ratatui::{layout::{Constraint, Layout, Rect}, Frame};
+
+use crate::{event::Event, tui::TuiComponent};
+
 use super::{
     blind::{Blind, BlindType},
     deck::{Deck, Drawable, Sortable},
@@ -42,5 +46,21 @@ impl Round {
         self.properties.round_number = 1;
         self.hand.sort_by_rank();
         Ok(())
+    }
+}
+
+impl TuiComponent for Round {
+    #[inline]
+    fn draw(&self, frame: &mut Frame, rect: Rect) {
+        let [_play_area, deck_area] = Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(rect);
+        self.hand.draw(frame, deck_area);
+    }
+
+    #[inline]
+    fn handle_events(&mut self, event: Event) {
+        match event {
+            _ => ()
+        }
+        self.hand.handle_events(event);
     }
 }
