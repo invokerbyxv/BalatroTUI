@@ -2,6 +2,11 @@ use std::error::Error;
 use std::sync::{Arc, RwLock};
 
 use rand::distributions::{Alphanumeric, DistString};
+use ratatui::layout::Rect;
+use ratatui::Frame;
+
+use crate::event::Event;
+use crate::tui::TuiComponent;
 
 use super::blind::{Blind, BlindType};
 use super::deck::Deck;
@@ -32,23 +37,43 @@ impl Default for RunProperties {
 pub struct Run {
     pub properties: RunProperties,
     pub deck: Arc<RwLock<Deck>>,
-    pub round: Option<Round>,
+    pub round: Round,
 }
 
 impl Run {
+    pub fn new(deck: Arc<RwLock<Deck>>, properties: RunProperties) -> Run {
+        Run {
+            deck: deck.clone(),
+            properties: properties.clone(),
+            round: Round {
+                deck: deck.clone(),
+                properties: RoundProperties {
+                    round_number: 1,
+                    blind: Blind::new(BlindType::SmallBlind, properties.ante).unwrap(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        }
+    }
+
     #[inline]
     pub fn start(&mut self) -> Result<(), Box<dyn Error>> {
-        let mut round = Round {
-            deck: self.deck.clone(),
-            properties: RoundProperties {
-                round_number: 1,
-                blind: Blind::new(BlindType::SmallBlind, self.properties.ante)?,
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        round.start()?;
-        self.round = Some(round);
-        Ok(())
+        self.round.start()
+    }
+}
+
+impl TuiComponent for Run {
+    #[inline]
+    fn draw(&self, frame: &mut Frame, rect: Rect) {
+        self.round.draw(frame, rect);
+    }
+
+    #[inline]
+    fn handle_events(&mut self, event: Event) {
+        match event {
+            _ => ()
+        }
+        self.round.handle_events(event);
     }
 }
