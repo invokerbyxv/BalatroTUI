@@ -3,6 +3,7 @@ use std::error::Error;
 use game::Game;
 
 pub mod core;
+pub mod primitives;
 pub mod event;
 pub mod game;
 pub mod tui;
