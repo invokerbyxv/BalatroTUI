@@ -1,6 +1,8 @@
-use std::error::Error;
+use std::{error::Error, fmt::{Display, Formatter, Result as FmtResult}};
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, Hash, PartialEq)]
+use ratatui::style::Color;
+
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq)]
 pub enum BlindType {
     SmallBlind = 0,
     BigBlind = 1,
@@ -22,7 +24,9 @@ pub enum Bosses {
     TheManacle,
 }
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, Hash, PartialEq)]
+const BLIND_BASE_AMOUNTS: [usize; 8] = [3, 8, 20, 50, 110, 200, 350, 500];
+
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq)]
 pub struct Blind {
     pub blind_type: BlindType,
     pub target: usize,
@@ -31,12 +35,15 @@ pub struct Blind {
 impl Blind {
     #[inline]
     fn get_target_score(blind_type: BlindType, ante: usize) -> Result<usize, Box<dyn Error>> {
-        let ante_geometric_ratio: usize = f32::powi(2.5, (ante as isize - 2).try_into()?).floor() as usize;
-        let ante_nth_geometric_term = 8 * ante_geometric_ratio;
+        if ante >= BLIND_BASE_AMOUNTS.len() {
+            // TODO: Implement endless mode blind base score calculation.
+            Err("Ante has crossed maximum computable ante. Need additional implementation.")?;
+        }
+
         let blind_type_multiple = blind_type as usize + 2;
         let chips_multiplier = 50;
 
-        Ok(chips_multiplier * ante_nth_geometric_term * blind_type_multiple)
+        Ok(chips_multiplier * blind_type_multiple * BLIND_BASE_AMOUNTS[ante - 1])
     }
 
     #[inline]
@@ -45,5 +52,25 @@ impl Blind {
             blind_type,
             target: Self::get_target_score(blind_type, ante)?,
         })
+    }
+
+    #[inline]
+    pub fn get_color(&self) -> Color {
+        match self.blind_type {
+            BlindType::SmallBlind => Color::Blue,
+            BlindType::BigBlind => Color::Green,
+            BlindType::BossBlind => Color::Red,
+        }
+    }
+}
+
+impl Display for Blind {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        let text = match self.blind_type {
+            BlindType::SmallBlind => "Small Blind",
+            BlindType::BigBlind => "Big Blind",
+            BlindType::BossBlind => "Boss Blind",
+        };
+        write!(f, "{}", text)
     }
 }
