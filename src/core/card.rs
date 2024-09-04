@@ -1,13 +1,8 @@
-use std::{array::IntoIter, cmp::Ordering, fmt::{Display, Formatter, Result}};
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use ratatui::{layout::{Alignment, Constraint, Layout, Margin, Rect}, text::Text, widgets::{Block, BorderType}, Frame};
+use strum_macros::EnumIter;
 
-use crate::{event::Event, tui::{center_widget, TuiComponent}};
-
-const CARD_WIDTH: usize = 12;
-const CARD_HEIGHT: usize = 9;
-
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
 pub enum Suit {
     Club,
     Diamond,
@@ -15,17 +10,9 @@ pub enum Suit {
     Spade,
 }
 
-impl Suit {
-    const VALUES: [Self; 4] = [Self::Club, Self::Diamond, Self::Heart, Self::Spade];
-
-    #[inline]
-    pub fn iter() -> IntoIter<Suit, 4> {
-        Self::VALUES.into_iter()
-    }
-}
-
 impl Display for Suit {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
         let suit_display = match *self {
             Suit::Club => "♣",
             Suit::Diamond => "♦",
@@ -36,80 +23,101 @@ impl Display for Suit {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
+pub enum Rank {
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Jack,
+    Queen,
+    King,
+    Ace,
+}
+
+impl Rank {
+    #[inline]
+    pub fn get_score(&self) -> usize {
+        match *self {
+            Rank::Two => 2,
+            Rank::Three => 3,
+            Rank::Four => 4,
+            Rank::Five => 5,
+            Rank::Six => 6,
+            Rank::Seven => 7,
+            Rank::Eight => 8,
+            Rank::Nine => 9,
+            Rank::Ten => 10,
+            Rank::Jack => 10,
+            Rank::Queen => 10,
+            Rank::King => 10,
+            Rank::Ace => 10,
+        }
+    }
+}
+
+impl Display for Rank {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        let rank_display = match *self {
+            Rank::Two => "2",
+            Rank::Three => "3",
+            Rank::Four => "4",
+            Rank::Five => "5",
+            Rank::Six => "6",
+            Rank::Seven => "7",
+            Rank::Eight => "8",
+            Rank::Nine => "9",
+            Rank::Ten => "10",
+            Rank::Jack => "J",
+            Rank::Queen => "Q",
+            Rank::King => "K",
+            Rank::Ace => "A",
+        };
+        write!(f, "{}", rank_display)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, PartialEq, Eq, Hash)]
 pub struct Card {
-    pub rank: usize,
-    pub score: usize,
+    pub rank: Rank,
     pub suit: Suit,
 }
 
-impl Card {
-    #[inline]
-    pub fn rank_display(&self) -> String {
-        return match self.rank {
-            // NOTE: Probably there's a better way to handle this with static str.
-            1 => "A".to_owned(),
-            13 => "K".to_owned(),
-            12 => "Q".to_owned(),
-            11 => "J".to_owned(),
-            _ => self.rank.to_string(),
-        };
-    }
-}
-
-impl PartialOrd for Card {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.rank.partial_cmp(&other.rank)
-    }
-}
-
-impl Ord for Card {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.rank.cmp(&other.rank).then(self.suit.cmp(&other.suit))
-    }
-}
-
 impl Display for Card {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}{}", self.suit, self.rank_display())
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}{}", self.suit, self.rank)
     }
 }
 
-impl TuiComponent for Card {
-    #[inline]
-    fn draw(&self, frame: &mut Frame, rect: Rect) {
-        let card_layout = center_widget(rect, Constraint::Length(CARD_WIDTH as u16), Constraint::Length(CARD_HEIGHT as u16));
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        frame.render_widget(Block::bordered().border_type(BorderType::Rounded), card_layout);
+    #[test]
+    fn sort_ranks() {
+        let mut unsorted_cards = vec![
+            Rank::Seven,
+            Rank::King,
+            Rank::Two,
+            Rank::Ace,
+        ];
 
-        let inner_rect = card_layout.inner(&Margin::new(1, 1));
+        let sorted_cards = vec![
+            Rank::Ace,
+            Rank::King,
+            Rank::Seven,
+            Rank::Two,
+        ];
 
-        let card_layout = Layout::vertical([
-            Constraint::Length(2),
-            Constraint::Fill(1),
-            Constraint::Length(2)
-        ]).split(inner_rect);
+        unsorted_cards.sort();
+        unsorted_cards.reverse();
 
-        frame.render_widget(Text::raw(
-            format!("{}\r\n{}", self.rank_display(), self.suit)
-        ).alignment(Alignment::Left), card_layout[0]);
-
-        // TODO: Mimic actual card suit layout
-        frame.render_widget(Text::raw(
-            format!("{}{}", self.suit, self.rank_display())
-        ).alignment(Alignment::Center), center_widget(
-            card_layout[1],
-            Constraint::Percentage(50),
-            Constraint::Percentage(50),
-        ));
-
-        frame.render_widget(Text::raw(
-            format!("{}\r\n{}", self.suit, self.rank_display())
-        ).alignment(Alignment::Right), card_layout[2]);
+        assert_eq!(unsorted_cards, sorted_cards);
     }
-
-    #[inline]
-    fn handle_events(&mut self, _event: Event) { }
 }

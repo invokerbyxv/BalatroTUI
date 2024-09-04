@@ -6,18 +6,14 @@ use ratatui::{layout::{Constraint, Layout, Rect}, Frame};
 
 use crate::{event::Event, tui::TuiComponent};
 
-use super::card::{Card, Suit};
+use super::card::{Card, Rank, Suit};
 
 // TODO: Use dynamic trait switching to achieve suit and rank sorting. Feed the impl directly to card instead of MultiSortable
 // TODO: Impl default traits for all structs
 
 static DEFAULT_DECK: Lazy<Vec<Card>> = Lazy::new(|| Suit::iter().flat_map(
-    move |suit| (1..=13).map(
-        move |rank| Card {
-            suit,
-            rank,
-            score: min(if rank == 1 { 10 } else { rank }, 10),
-        }
+    move |suit| Rank::iter().map(
+        move |rank| Card { suit, rank }
     )
 ).collect());
 
