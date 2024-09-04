@@ -1,15 +1,19 @@
-use std::{cmp::{min, Reverse}, error::Error, fmt::{Display, Formatter, Result as DisplayResult}, iter::zip};
+use std::{cmp::Reverse, collections::HashSet, error::Error};
+use crossterm::event::KeyCode;
 use once_cell::sync::Lazy;
 use rand::{thread_rng, seq::SliceRandom};
 use itertools::{Either, Itertools};
-use ratatui::{layout::{Constraint, Layout, Rect}, Frame};
+use ratatui::{layout::{Constraint, Layout, Offset, Rect}, Frame};
+use strum::IntoEnumIterator;
 
-use crate::{event::Event, tui::TuiComponent};
+use crate::{components::card::CardWidget, primitives::cycle_cursor_vec::CycleCursorVec, event::Event, tui::TuiComponent};
 
 use super::card::{Card, Rank, Suit};
 
 // TODO: Use dynamic trait switching to achieve suit and rank sorting. Feed the impl directly to card instead of MultiSortable
 // TODO: Impl default traits for all structs
+
+const MAXIMUM_SELECTED_CARDS: usize = 5;
 
 static DEFAULT_DECK: Lazy<Vec<Card>> = Lazy::new(|| Suit::iter().flat_map(
     move |suit| Rank::iter().map(
@@ -17,16 +21,19 @@ static DEFAULT_DECK: Lazy<Vec<Card>> = Lazy::new(|| Suit::iter().flat_map(
     )
 ).collect());
 
-#[derive(Debug, Default, Clone)]
+#[derive(Clone, Debug)]
 pub struct Deck {
-    pub cards: Vec<Card>,
-    pub selected: Vec<bool>,
+    pub cards: CycleCursorVec<Card>,
+    pub selected: HashSet<usize>,
 }
 
 impl Deck {
     #[inline]
     pub fn standard() -> Self {
-        Self { cards: DEFAULT_DECK.to_vec(), ..Default::default() }
+        Deck {
+            cards: DEFAULT_DECK.to_vec().into(),
+            selected: HashSet::new(),
+        }
     }
 
     #[inline]
@@ -36,13 +43,9 @@ impl Deck {
     }
 }
 
-impl Display for Deck {
-    fn fmt(&self, f: &mut Formatter) -> DisplayResult {
-        writeln!(f, "")?;
-        for (card, is_selected) in zip(self.cards.iter(), self.selected.iter()) {
-            write!(f, "\t{}{}", card, if *is_selected { "*" } else { "" })?;
-        }
-        Ok(())
+impl Default for Deck {
+    fn default() -> Self {
+        Deck::standard()
     }
 }
 
@@ -58,9 +61,10 @@ impl Drawable for Deck {
             Err("Hand size cannot be greater than the source deck.")?
         }
         self.shuffle();
+        let drain_size = self.cards.len() - hand_size;
         Ok(Self {
-            cards: self.cards.drain(self.cards.len() - hand_size..).collect(),
-            selected: vec![false; hand_size],
+            cards: self.cards.drain(drain_size..).collect::<Vec<Card>>().into(),
+            selected: HashSet::new(),
         })
     }
 }
@@ -75,30 +79,30 @@ pub trait Selectable where Self : Drawable {
 impl Selectable for Deck {
     #[inline]
     fn select(&mut self, selection: usize) {
-        self.selected[selection] = true;
+        self.selected.insert(selection);
     }
 
     #[inline]
     fn deselect(&mut self, selection: usize) {
-        self.selected[selection] = false;
+        self.selected.remove(&selection);
     }
 
     #[inline]
     fn peek_selected(&self) -> Result<Vec<Card>, Box<dyn Error>> {
-        Ok(zip(self.cards.iter().cloned(), self.selected.iter().cloned()).take_while(|(_, is_selected)| *is_selected).map(|(card, _)| card).collect())
+        Ok(self.selected.iter().map(|&idx| self.cards.inner[idx]).collect())
     }
 
     #[inline]
     fn draw_selected(&mut self) -> Result<Vec<Card>, Box<dyn Error>> {
-        let (selected, leftover): (Vec<_>, Vec<_>) = zip(self.cards.iter().cloned(), self.selected.iter().cloned()).partition_map(|(card, is_selected)| {
-            if is_selected {
+        let (selected, leftover): (Vec<_>, Vec<_>) = self.cards.iter().enumerate().partition_map(|(idx, card)| {
+            if self.selected.contains(&idx) {
                 Either::Left(card)
             } else {
                 Either::Right(card)
             }
         });
-        self.selected = vec![false; leftover.len()];
-        self.cards = leftover;
+        self.selected.clear();
+        self.cards = leftover.into();
         Ok(selected)
     }
 }
@@ -122,17 +126,46 @@ impl Sortable for Deck {
 
 impl TuiComponent for Deck {
     #[inline]
-    fn draw(&self, frame: &mut Frame, rect: Rect) {
+    fn draw(&mut self, frame: &mut Frame, rect: Rect) {
         let deck_layout = Layout::horizontal(vec![Constraint::Fill(1); self.cards.len()]).split(rect);
-        for (idx, card) in self.cards.iter().enumerate() {
-            card.draw(frame, deck_layout[idx]);
+        let hover_position = self.cards.pos;
+        for (idx, card) in self.cards.iter_mut().enumerate() {
+            let mut widget = CardWidget::new();
+
+            if hover_position == Some(idx) {
+                widget.hover();
+            }
+
+            let mut area = deck_layout[idx];
+
+            if self.selected.contains(&idx) {
+                area = deck_layout[idx].offset(Offset { x: 0, y: -5 });
+            }
+
+            frame.render_stateful_widget(widget, area, card);
         }
     }
 
     #[inline]
     fn handle_events(&mut self, event: Event) {
-        for card in &mut self.cards {
-            card.handle_events(event);
+        if let Event::Key(key_event) = event {
+            match key_event.code {
+                KeyCode::Right => {
+                    self.cards.cycle_next();
+                }
+                KeyCode::Left => {
+                    self.cards.cycle_prev();
+                }
+                KeyCode::Up => {
+                    if self.selected.len() < MAXIMUM_SELECTED_CARDS {
+                        self.select(self.cards.pos.unwrap());
+                    }
+                }
+                KeyCode::Down => {
+                    self.deselect(self.cards.pos.unwrap());
+                }
+                _ => ()
+            }
         }
     }
 }

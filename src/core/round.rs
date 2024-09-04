@@ -1,12 +1,13 @@
 use std::{error::Error, sync::{Arc, RwLock}};
 
+use crossterm::event::KeyCode;
 use ratatui::{layout::{Constraint, Layout, Rect}, Frame};
 
 use crate::{event::Event, tui::TuiComponent};
 
 use super::{
     blind::{Blind, BlindType},
-    deck::{Deck, Drawable, Sortable},
+    deck::{Deck, Drawable, Selectable, Sortable},
 };
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
@@ -49,17 +50,41 @@ impl Round {
     }
 }
 
+// TODO: Add a scorer animation area.
+// TODO: Remove deep variable access, use accessor functions/split responsibilities.
+
 impl TuiComponent for Round {
     #[inline]
-    fn draw(&self, frame: &mut Frame, rect: Rect) {
+    fn draw(&mut self, frame: &mut Frame, rect: Rect) {
         let [_play_area, deck_area] = Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(rect);
         self.hand.draw(frame, deck_area);
     }
 
     #[inline]
     fn handle_events(&mut self, event: Event) {
-        match event {
-            _ => ()
+        if let Event::Key(key_event) = event {
+            match key_event.code {
+                KeyCode::Enter => {
+                    self.properties.hands -= 1;
+                    let mut played_cards = self.hand.draw_selected().unwrap();
+                    let mut new_cards = self.deck.write().unwrap().draw_random(played_cards.len()).unwrap();
+                    self.history.cards.append(&mut played_cards);
+                    self.hand.cards.append(&mut new_cards.cards);
+                    self.hand.sort_by_rank();
+                }
+                KeyCode::Char('x') => {
+                    if self.properties.discards == 0 {
+                        return
+                    }
+                    self.properties.discards -= 1;
+                    let mut discarded_cards = self.hand.draw_selected().unwrap();
+                    let mut new_cards = self.deck.write().unwrap().draw_random(discarded_cards.len()).unwrap();
+                    self.history.cards.append(&mut discarded_cards);
+                    self.hand.cards.append(&mut new_cards.cards);
+                    self.hand.sort_by_rank();
+                }
+                _ => ()
+            }
         }
         self.hand.handle_events(event);
     }
