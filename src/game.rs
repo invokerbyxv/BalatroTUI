@@ -51,27 +51,24 @@ impl Game {
 
 impl TuiComponent for Game {
     #[inline]
-    fn draw(&self, frame: &mut Frame, rect: Rect)  {
+    fn draw(&mut self, frame: &mut Frame, rect: Rect)  {
         self.run.draw(frame, rect);
     }
 
     #[inline]
     fn handle_events(&mut self, event: Event) {
-        match event {
-            Event::Key(key_event) => {
-                match key_event.code {
-                    KeyCode::Esc | KeyCode::Char('q') => {
+        if let Event::Key(key_event) = event {
+            match key_event.code {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    self.should_quit = true;
+                }
+                KeyCode::Char('c') | KeyCode::Char('C') => {
+                    if key_event.modifiers == KeyModifiers::CONTROL {
                         self.should_quit = true;
                     }
-                    KeyCode::Char('c') | KeyCode::Char('C') => {
-                        if key_event.modifiers == KeyModifiers::CONTROL {
-                            self.should_quit = true;
-                        }
-                    }
-                    _ => ()
                 }
+                _ => ()
             }
-            _ => ()
         }
         self.run.handle_events(event);
     }

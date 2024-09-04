@@ -1,4 +1,4 @@
-use std::{error::Error, io::ErrorKind, time::Duration};
+use std::{error::Error, io::{Error as IOError, ErrorKind}, time::Duration};
 
 use crossterm::event::{Event as CrosstermEvent, EventStream, KeyEvent, MouseEvent};
 
@@ -82,12 +82,14 @@ impl EventHandler {
         }
     }
 
+    // TODO: Handle all errors using single interceptor point. Create custom errors for handling different error/panic types.
+
     #[inline]
     pub async fn next(&mut self) -> Result<Event, Box<dyn Error>> {
         self.receiver
             .recv()
             .await
-            .ok_or(Box::new(std::io::Error::new(
+            .ok_or(Box::new(IOError::new(
                 ErrorKind::Other,
                 "This is an IO error",
             )))
