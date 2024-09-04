@@ -45,3 +45,40 @@ impl<T> DerefMut for CycleCursorVec<T> {
         &mut self.inner
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cursor_cycle_next() {
+        let source = vec![1, 2, 3, 4];
+        let mut cursor: CycleCursorVec<usize> = source.into();
+
+        assert_eq!(cursor.pos, None);
+        cursor.cycle_next();
+        assert_eq!(cursor.inner[cursor.pos.unwrap()], 1);
+        cursor.cycle_next();
+        cursor.cycle_next();
+        cursor.cycle_next();
+        assert_eq!(cursor.inner[cursor.pos.unwrap()], 4);
+        cursor.cycle_next();
+        assert_eq!(cursor.inner[cursor.pos.unwrap()], 1);
+    }
+
+    #[test]
+    fn cursor_cycle_prev() {
+        let source = vec![1, 2, 3, 4];
+        let mut cursor: CycleCursorVec<usize> = source.into();
+
+        assert_eq!(cursor.pos, None);
+        cursor.cycle_prev();
+        assert_eq!(cursor.inner[cursor.pos.unwrap()], 4);
+        cursor.cycle_prev();
+        cursor.cycle_prev();
+        cursor.cycle_prev();
+        assert_eq!(cursor.inner[cursor.pos.unwrap()], 1);
+        cursor.cycle_prev();
+        assert_eq!(cursor.inner[cursor.pos.unwrap()], 4);
+    }
+}
