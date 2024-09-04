@@ -4,3 +4,4 @@ pub mod deck;
 pub mod error;
 pub mod round;
 pub mod run;
+pub mod scorer;
