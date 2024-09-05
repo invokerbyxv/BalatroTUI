@@ -104,7 +104,7 @@ impl TuiComponent for Run {
         // TODO: Add chip image next to round score.
         frame.render_widget(Block::bordered().border_type(BorderType::Rounded), round_score_area);
         frame.render_widget(Paragraph::new("Round Score"), center_widget(round_score_text_area, Constraint::Percentage(50), Constraint::Length(1)));
-        frame.render_widget(Paragraph::new("0" /* self.round.score */), center_widget(round_score_value_area, Constraint::Percentage(50), Constraint::Length(1)));
+        frame.render_widget(Paragraph::new(self.round.score.to_string()), center_widget(round_score_value_area, Constraint::Percentage(50), Constraint::Length(1)));
 
         frame.render_stateful_widget(ScorerPreviewWidget::new(), scoring_area, &mut self.round.hand.peek_selected().unwrap());
         // TODO: Load ScoringWidget here.

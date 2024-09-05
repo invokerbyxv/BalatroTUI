@@ -7,7 +7,7 @@ use crate::{event::Event, tui::TuiComponent};
 
 use super::{
     blind::{Blind, BlindType},
-    deck::{Deck, Drawable, Selectable, Sortable},
+    deck::{Deck, Drawable, Selectable, Sortable}, scorer::Scorer,
 };
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
@@ -35,6 +35,7 @@ impl Default for RoundProperties {
 pub struct Round {
     pub properties: RoundProperties,
     pub deck: Arc<RwLock<Deck>>,
+    pub score: usize,
     pub hand: Deck,
     pub history: Deck,
 }
@@ -46,6 +47,38 @@ impl Round {
         self.hand = deck.draw_random(self.properties.hand_size)?;
         self.properties.round_number = 1;
         self.hand.sort_by_rank();
+        Ok(())
+    }
+
+    #[inline]
+    pub fn play_hand(&mut self) -> Result<(), Box<dyn Error>> {
+        self.properties.hands -= 1;
+
+        let mut played_cards = self.hand.draw_selected()?;
+
+        self.score += Scorer::score_cards(&played_cards)?;
+
+        let mut new_cards = self.deck.write().unwrap().draw_random(played_cards.len())?;
+
+        self.history.cards.append(&mut played_cards);
+        self.hand.cards.append(&mut new_cards.cards);
+        self.hand.sort_by_rank();
+
+        Ok(())
+    }
+
+    #[inline]
+    pub fn discard_hand(&mut self) -> Result<(), Box<dyn Error>> {
+        self.properties.discards -= 1;
+
+        let mut discarded_cards = self.hand.draw_selected()?;
+
+        let mut new_cards = self.deck.write().unwrap().draw_random(discarded_cards.len())?;
+
+        self.history.cards.append(&mut discarded_cards);
+        self.hand.cards.append(&mut new_cards.cards);
+        self.hand.sort_by_rank();
+
         Ok(())
     }
 }
@@ -64,25 +97,14 @@ impl TuiComponent for Round {
     fn handle_events(&mut self, event: Event) {
         if let Event::Key(key_event) = event {
             match key_event.code {
-                KeyCode::Enter => {
-                    self.properties.hands -= 1;
-                    let mut played_cards = self.hand.draw_selected().unwrap();
-                    let mut new_cards = self.deck.write().unwrap().draw_random(played_cards.len()).unwrap();
-                    self.history.cards.append(&mut played_cards);
-                    self.hand.cards.append(&mut new_cards.cards);
-                    self.hand.sort_by_rank();
-                }
+                KeyCode::Enter => self.play_hand().unwrap(),
                 KeyCode::Char('x') => {
                     if self.properties.discards == 0 {
-                        return
+                        return;
                     }
-                    self.properties.discards -= 1;
-                    let mut discarded_cards = self.hand.draw_selected().unwrap();
-                    let mut new_cards = self.deck.write().unwrap().draw_random(discarded_cards.len()).unwrap();
-                    self.history.cards.append(&mut discarded_cards);
-                    self.hand.cards.append(&mut new_cards.cards);
-                    self.hand.sort_by_rank();
-                }
+
+                    self.discard_hand().unwrap()
+                },
                 _ => ()
             }
         }

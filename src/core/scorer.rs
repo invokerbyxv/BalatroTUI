@@ -70,14 +70,15 @@ impl Scorer {
     }
 
     #[inline]
-    pub fn get_scoring_hand(cards: Vec<Card>) -> Result<ScoringHand, Box<dyn Error>> {
+    pub fn get_scoring_hand(cards: &Vec<Card>) -> Result<(ScoringHand, Vec<Rank>), Box<dyn Error>> {
         let suit_groups: Vec<(Suit, usize)> = cards.iter().fold(HashMap::new(), |mut groups, card| {
             groups.entry(card.suit)
-                .and_modify(|e| *e += 1)
-                .or_insert(1);
+            .and_modify(|e| *e += 1)
+            .or_insert(1);
             groups
         }).into_iter().sorted_by(|a, b| b.1.cmp(&a.1)).collect();
 
+        // TODO: Sort by rank before forming groups.
         let rank_groups: Vec<(Rank, usize)> = cards.iter().fold(HashMap::new(), |mut groups, card| {
             groups.entry(card.rank)
                 .and_modify(|e| *e += 1)
@@ -86,53 +87,73 @@ impl Scorer {
         }).into_iter().sorted_by(|a, b| b.1.cmp(&a.1)).collect();
 
         if suit_groups.is_empty() || rank_groups.is_empty() {
-            return Ok(ScoringHand::None)
+            return Ok((ScoringHand::None, vec![]))
         }
 
         if suit_groups[0].1 == 5 && rank_groups[0].1 == 5 {
-            return Ok(ScoringHand::FlushFive)
+            return Ok((ScoringHand::FlushFive, vec![rank_groups[0].0; rank_groups[0].1]))
         }
 
         if rank_groups.len() >= 2 && suit_groups[0].1 == 5 && rank_groups[0].1 == 3 && rank_groups[1].1 == 2 {
-            return Ok(ScoringHand::FlushHouse)
+            let mut played_ranks = vec![];
+            played_ranks.append(&mut vec![rank_groups[0].0; rank_groups[0].1]);
+            played_ranks.append(&mut vec![rank_groups[1].0; rank_groups[1].1]);
+            return Ok((ScoringHand::FlushHouse, played_ranks))
         }
 
         if rank_groups[0].1 == 5 {
-            return Ok(ScoringHand::FiveOfAKind)
+            return Ok((ScoringHand::FiveOfAKind, vec![rank_groups[0].0; rank_groups[0].1]))
         }
 
         // TODO: Implement Royal Flush check
         // TODO: Implement Straight Flush check
 
         if rank_groups[0].1 == 4 {
-            return Ok(ScoringHand::FourOfAKind)
+            return Ok((ScoringHand::FourOfAKind, vec![rank_groups[0].0; rank_groups[0].1]))
         }
 
         if rank_groups.len() >= 2 && rank_groups[0].1 == 3 && rank_groups[1].1 == 2 {
-            return Ok(ScoringHand::FullHouse)
+            let mut played_ranks = vec![];
+            played_ranks.append(&mut vec![rank_groups[0].0; rank_groups[0].1]);
+            played_ranks.append(&mut vec![rank_groups[1].0; rank_groups[1].1]);
+            return Ok((ScoringHand::FullHouse, played_ranks))
         }
 
         if suit_groups[0].1 == 5 {
-            return Ok(ScoringHand::Flush)
+            return Ok((ScoringHand::Flush, cards.iter().map(|card| card.rank).collect()))
         }
 
         // TODO: Implement Straight check
         // TODO: Implement Ace wrap-around for straight checks
 
         if rank_groups[0].1 == 3 {
-            return Ok(ScoringHand::ThreeOfAKind)
+            return Ok((ScoringHand::ThreeOfAKind, vec![rank_groups[0].0; rank_groups[0].1]))
         }
 
         if rank_groups.len() >= 2 && rank_groups[0].1 == 2 && rank_groups[1].1 == 2 {
-            return Ok(ScoringHand::TwoPair)
+            let mut played_ranks = vec![];
+            played_ranks.append(&mut vec![rank_groups[0].0; rank_groups[0].1]);
+            played_ranks.append(&mut vec![rank_groups[1].0; rank_groups[1].1]);
+            return Ok((ScoringHand::TwoPair, played_ranks))
         }
 
         if rank_groups[0].1 == 2 {
-            return Ok(ScoringHand::Pair)
+            return Ok((ScoringHand::Pair, vec![rank_groups[0].0; rank_groups[0].1]))
         }
 
 
-        Ok(ScoringHand::HighCard)
+        Ok((ScoringHand::HighCard, vec![rank_groups[0].0; rank_groups[0].1]))
+    }
+
+    pub fn score_cards(cards: &Vec<Card>) -> Result<usize, Box<dyn Error>> {
+        let (scoring_hand, scored_ranks) = Self::get_scoring_hand(&cards)?;
+        let (base_chips, multiplier) = Self::get_chips_and_multiplier(scoring_hand)?;
+        let chips_increment = Self::score_chips_from_ranks(&scored_ranks)?;
+        Ok((base_chips + chips_increment) * multiplier)
+    }
+
+    pub fn score_chips_from_ranks(ranks: &Vec<Rank>) -> Result<usize, Box<dyn Error>> {
+        Ok(ranks.iter().fold(0, |acc, rank| acc + rank.get_score()))
     }
 }
 
@@ -150,7 +171,7 @@ mod tests {
             Card { rank: Rank::Ten, suit: Suit::Club },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::FlushFive);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::FlushFive);
     }
 
     #[test]
@@ -163,7 +184,7 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Club },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::FlushHouse);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::FlushHouse);
     }
 
     #[test]
@@ -176,7 +197,7 @@ mod tests {
             Card { rank: Rank::Ten, suit: Suit::Club },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::FiveOfAKind);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::FiveOfAKind);
     }
 
     #[test]
@@ -189,7 +210,7 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Club },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::FourOfAKind);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::FourOfAKind);
     }
 
     #[test]
@@ -202,7 +223,7 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Diamond },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::FullHouse);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::FullHouse);
     }
 
     #[test]
@@ -215,7 +236,7 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Club },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::Flush);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::Flush);
     }
 
     #[test]
@@ -228,7 +249,7 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Diamond },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::ThreeOfAKind);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::ThreeOfAKind);
     }
 
     #[test]
@@ -241,7 +262,7 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Diamond },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::TwoPair);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::TwoPair);
     }
 
     #[test]
@@ -254,7 +275,7 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Diamond },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::Pair);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::Pair);
     }
 
     #[test]
@@ -267,6 +288,6 @@ mod tests {
             Card { rank: Rank::Three, suit: Suit::Diamond },
         ];
 
-        assert_eq!(Scorer::get_scoring_hand(test_cards).unwrap(), ScoringHand::HighCard);
+        assert_eq!(Scorer::get_scoring_hand(&test_cards).unwrap().0, ScoringHand::HighCard);
     }
 }
