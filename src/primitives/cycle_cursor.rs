@@ -1,31 +1,30 @@
-// TODO: Add cycle cursor base type instead of Vec directly.
-
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug, Default)]
-pub struct CycleCursorVec<T> {
+pub struct CycleCursor<T> {
     pub inner: Vec<T>,
     pub pos: Option<usize>,
 }
 
-impl<T> From<Vec<T>> for CycleCursorVec<T> {
-    fn from(inner: Vec<T>) -> Self {
+impl<I> From<I> for CycleCursor<I::Item>
+where
+    I: IntoIterator,
+{
+    fn from(inner: I) -> Self {
         Self {
-            inner,
+            inner: inner.into_iter().collect(),
             pos: None,
         }
     }
 }
 
-impl<T> CycleCursorVec<T> {
-    #[inline]
+impl<T> CycleCursor<T> {
     pub fn cycle_next(&mut self) {
         let max_items = self.inner.len();
         let pos = (self.pos.unwrap_or(max_items - 1) + max_items + 1) % max_items;
         self.pos = Some(pos);
     }
 
-    #[inline]
     pub fn cycle_prev(&mut self) {
         let max_items = self.inner.len();
         let pos = (self.pos.unwrap_or(max_items) + max_items - 1) % max_items;
@@ -33,14 +32,17 @@ impl<T> CycleCursorVec<T> {
     }
 }
 
-impl<T> Deref for CycleCursorVec<T> {
+impl<T> Deref for CycleCursor<T> {
     type Target = Vec<T>;
+
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl<T> DerefMut for CycleCursorVec<T> {
+impl<T> DerefMut for CycleCursor<T> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
@@ -48,12 +50,14 @@ impl<T> DerefMut for CycleCursorVec<T> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::*;
 
     #[test]
     fn cursor_cycle_next() {
         let source = vec![1, 2, 3, 4];
-        let mut cursor: CycleCursorVec<usize> = source.into();
+        let mut cursor: CycleCursor<usize> = source.into();
 
         assert_eq!(cursor.pos, None);
         cursor.cycle_next();
@@ -68,8 +72,8 @@ mod tests {
 
     #[test]
     fn cursor_cycle_prev() {
-        let source = vec![1, 2, 3, 4];
-        let mut cursor: CycleCursorVec<usize> = source.into();
+        let source = HashSet::from([1, 2, 3, 4]);
+        let mut cursor: CycleCursor<usize> = source.into();
 
         assert_eq!(cursor.pos, None);
         cursor.cycle_prev();

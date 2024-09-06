@@ -1,1 +1,1 @@
-pub mod cycle_cursor_vec;
+pub mod cycle_cursor;

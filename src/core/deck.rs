@@ -6,7 +6,7 @@ use itertools::{Either, Itertools};
 use ratatui::{layout::{Constraint, Layout, Offset, Rect}, Frame};
 use strum::IntoEnumIterator;
 
-use crate::{components::card::{CardVisualState, CardWidget, CardWidgetState}, event::Event, primitives::cycle_cursor_vec::CycleCursorVec, tui::TuiComponent};
+use crate::{components::card::{CardVisualState, CardWidget, CardWidgetState}, event::Event, primitives::cycle_cursor::CycleCursor, tui::TuiComponent};
 
 use super::card::{Card, Rank, Suit};
 
@@ -24,7 +24,7 @@ static DEFAULT_DECK: Lazy<Vec<Card>> = Lazy::new(|| Suit::iter().flat_map(
 
 #[derive(Clone, Debug)]
 pub struct Deck {
-    pub cards: CycleCursorVec<Card>,
+    pub cards: CycleCursor<Card>,
     pub selected: HashSet<usize>,
 }
 
