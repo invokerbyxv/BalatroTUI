@@ -1,9 +1,11 @@
-use ratatui::{buffer::Buffer, layout::{Alignment, Constraint, Layout, Margin, Rect}, symbols::border, widgets::{Block, Paragraph, StatefulWidget, Widget}};
+use ratatui::{buffer::Buffer, layout::{Constraint, Layout, Margin, Rect}, symbols::border, text::Line, widgets::{Block, Paragraph, StatefulWidget, Widget}};
 
-use crate::{core::card::Card, tui::{center_widget, render_centered_text}};
+use crate::core::card::Card;
 
-const CARD_WIDTH: usize = 12;
-const CARD_HEIGHT: usize = 9;
+use super::text_box::TextBoxWidget;
+
+const CARD_WIDTH: u16 = 12;
+const CARD_HEIGHT: u16 = 9;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum CardVisualState {
@@ -13,44 +15,66 @@ pub enum CardVisualState {
     Selected,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
-pub struct CardWidget {
-    visual_state: CardVisualState
+#[derive(Debug, Clone, Copy)]
+pub struct CardWidgetState {
+    pub card: Card,
+    pub visual_state: CardVisualState
 }
+
+impl CardWidgetState {
+    pub fn new(card: Card, visual_state: CardVisualState) -> Self {
+        CardWidgetState { card, visual_state }
+    }
+}
+
+impl From<Card> for CardWidgetState {
+    fn from(value: Card) -> Self {
+        CardWidgetState::new(value, CardVisualState::Normal)
+    }
+}
+
+impl From<&mut Card> for CardWidgetState {
+    fn from(value: &mut Card) -> Self {
+        CardWidgetState::new(value.clone(), CardVisualState::Normal)
+    }
+}
+
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct CardWidget { }
 
 impl CardWidget {
     pub fn new() -> Self {
-        CardWidget { visual_state: CardVisualState::Normal }
+        CardWidget { }
     }
-
-    pub fn hover(&mut self) {
-        self.visual_state = CardVisualState::Hovered;
-    }
-
-    // TODO: Add event handling with selection of cards
 }
 
 impl StatefulWidget for CardWidget {
-    type State = Card;
+    type State = CardWidgetState;
 
     #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let card_outer_layout = center_widget(area, Constraint::Length(CARD_WIDTH as u16), Constraint::Length(CARD_HEIGHT as u16));
-        let inner_area = card_outer_layout.inner(&Margin::new(1, 1));
-        let [top_area, middle_area, bottom_area] = Layout::vertical([
-            Constraint::Length(2),
-            Constraint::Fill(1),
-            Constraint::Length(2)
-        ]).areas(inner_area);
-        let border_set = match self.visual_state {
+        // Prepare variables
+        let border_set = match state.visual_state {
             CardVisualState::Hovered => border::THICK,
             _ => border::ROUNDED,
         };
 
-        Block::bordered().border_set(border_set).render(card_outer_layout, buf);
-        Paragraph::new(format!("{}\r\n{}", state.rank, state.suit)).alignment(Alignment::Left).render(top_area, buf);
+        // Prepare areas
+        let [area] = Layout::vertical([Constraint::Length(CARD_HEIGHT)]).areas(area);
+        let [area] = Layout::horizontal([Constraint::Length(CARD_WIDTH)]).areas(area);
+        let [top_area, middle_area, bottom_area] = Layout::vertical([
+            Constraint::Length(2),
+            Constraint::Fill(1),
+            Constraint::Length(2)
+        ]).areas(area.inner(Margin::new(1, 1)));
+
+        // Render containers
+        Block::bordered().border_set(border_set).render(area, buf);
+
+        Paragraph::new(format!("{}\r\n{}", state.card.rank, state.card.suit)).left_aligned().render(top_area, buf);
         // TODO: Mimic actual card suit layout
-        render_centered_text(format!("{}{}", state.rank, state.suit), middle_area, buf);
-        Paragraph::new(format!("{}\r\n{}", state.suit, state.rank)).alignment(Alignment::Right).render(bottom_area, buf);
+        TextBoxWidget::new([Line::from(format!("{}{}", state.card.rank, state.card.suit)).centered()]).render(middle_area, buf);
+        Paragraph::new(format!("{}\r\n{}", state.card.suit, state.card.rank)).right_aligned().render(bottom_area, buf);
     }
 }

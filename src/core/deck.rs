@@ -6,7 +6,7 @@ use itertools::{Either, Itertools};
 use ratatui::{layout::{Constraint, Layout, Offset, Rect}, Frame};
 use strum::IntoEnumIterator;
 
-use crate::{components::card::CardWidget, primitives::cycle_cursor_vec::CycleCursorVec, event::Event, tui::TuiComponent};
+use crate::{components::card::{CardVisualState, CardWidget, CardWidgetState}, event::Event, primitives::cycle_cursor_vec::CycleCursorVec, tui::TuiComponent};
 
 use super::card::{Card, Rank, Suit};
 
@@ -124,16 +124,18 @@ impl Sortable for Deck {
     }
 }
 
+// TODO: Use ListWidget to handle selection instead.
+
 impl TuiComponent for Deck {
     #[inline]
     fn draw(&mut self, frame: &mut Frame, rect: Rect) {
         let deck_layout = Layout::horizontal(vec![Constraint::Fill(1); self.cards.len()]).split(rect);
         let hover_position = self.cards.pos;
         for (idx, card) in self.cards.iter_mut().enumerate() {
-            let mut widget = CardWidget::new();
+            let mut card_widget_state = CardWidgetState::from(card);
 
             if hover_position == Some(idx) {
-                widget.hover();
+                card_widget_state.visual_state = CardVisualState::Hovered;
             }
 
             let mut area = deck_layout[idx];
@@ -142,7 +144,7 @@ impl TuiComponent for Deck {
                 area = deck_layout[idx].offset(Offset { x: 0, y: -5 });
             }
 
-            frame.render_stateful_widget(widget, area, card);
+            frame.render_stateful_widget(CardWidget::new(), area, &mut card_widget_state);
         }
     }
 
@@ -158,11 +160,15 @@ impl TuiComponent for Deck {
                 }
                 KeyCode::Up => {
                     if self.selected.len() < MAXIMUM_SELECTED_CARDS {
-                        self.select(self.cards.pos.unwrap());
+                        if let Some(pos) = self.cards.pos {
+                            self.select(pos);
+                        }
                     }
                 }
                 KeyCode::Down => {
-                    self.deselect(self.cards.pos.unwrap());
+                        if let Some(pos) = self.cards.pos {
+                            self.deselect(pos);
+                        }
                 }
                 _ => ()
             }
