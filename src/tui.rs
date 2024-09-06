@@ -89,13 +89,20 @@ pub trait TuiComponent {
     fn handle_events(&mut self, _event: Event) { }
 }
 
-pub fn center_widget(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
-    let [area] = Layout::horizontal([horizontal])
-        .flex(Flex::Center)
-        .areas(area);
-    let [area] = Layout::vertical([vertical]).flex(Flex::Center).areas(area);
-    area
+pub fn get_line_with_chips<'a, T: Into<Span<'a>>>(content: T, color: Color) -> Line<'a> {
+    Line::from(vec![
+        // TODO: Consider using BigText here
+        "⛀".set_style(Style::new().fg(color)),
+        "  ".into(),
+        content.into(),
+    ])
 }
+
+pub fn get_line_width(lines: &Vec<Line>) -> usize {
+    let t: Text = lines.clone().into();
+    t.width()
+}
+
 fn init_panic_hook() -> EyreResult<()> {
     let (panic_hook, eyre_hook) = HookBuilder::default()
         .panic_section(format!("This is a bug. Consider reporting it at {}", env!("CARGO_PKG_REPOSITORY")))
