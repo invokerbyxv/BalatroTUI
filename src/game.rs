@@ -35,7 +35,7 @@ impl Game {
         loop {
             self.handle_events(events.next().await?);
             tui.draw(|frame| {
-                self.draw(frame, frame.size());
+                self.draw(frame, frame.area());
             })?;
             if self.should_quit {
                 break
@@ -57,18 +57,26 @@ impl TuiComponent for Game {
 
     #[inline]
     fn handle_events(&mut self, event: Event) {
-        if let Event::Key(key_event) = event {
-            match key_event.code {
-                KeyCode::Esc | KeyCode::Char('q') => {
-                    self.should_quit = true;
-                }
-                KeyCode::Char('c') | KeyCode::Char('C') => {
-                    if key_event.modifiers == KeyModifiers::CONTROL {
+        match event {
+            Event::Key(key_event) => {
+                match key_event.code {
+                    KeyCode::Esc | KeyCode::Char('q') => {
                         self.should_quit = true;
                     }
+                    KeyCode::Char('c') | KeyCode::Char('C') => {
+                        if key_event.modifiers == KeyModifiers::CONTROL {
+                            self.should_quit = true;
+                        }
+                    }
+                    _ => ()
                 }
-                _ => ()
             }
+            Event::Resize(x_size, y_size) => {
+                if y_size < 40 || x_size < 150 {
+                    panic!("Terminal size was less than required to render game");
+                }
+            }
+            _ => ()
         }
         self.run.handle_events(event);
     }
