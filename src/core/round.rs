@@ -5,7 +5,7 @@ use ratatui::{layout::{Constraint, Layout, Rect}, Frame};
 
 use crate::{event::Event, tui::TuiComponent};
 
-use super::{blind::{Blind, BlindType}, card::Card, deck::{Deck, Drawable, Selectable, Sortable}, scorer::Scorer};
+use super::{blind::{Blind, BlindType}, card::{Card, Sortable}, deck::Deck, scorer::Scorer};
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub struct RoundProperties {
@@ -61,7 +61,7 @@ impl Round {
 
         self.score += Scorer::score_cards(&played_cards)?;
 
-        self.deal_cards(played_cards);
+        self.deal_cards(played_cards)?;
 
         Ok(())
     }
@@ -71,7 +71,7 @@ impl Round {
 
         let discarded_cards = self.hand.draw_selected()?;
 
-        self.deal_cards(discarded_cards);
+        self.deal_cards(discarded_cards)?;
 
         Ok(())
     }

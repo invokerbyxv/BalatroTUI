@@ -5,6 +5,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{backend::CrosstermBackend as Backend, layout::Rect, style::{Color, Style, Styled}, text::{Line, Span, Text}, Frame, Terminal};
+use tracing::error;
 use std::{error::Error, io::{stderr, Stderr}, ops::{Deref, DerefMut}, panic::set_hook, process::exit};
 use color_eyre::{config::HookBuilder, Result as EyreResult};
 
@@ -76,7 +77,7 @@ impl DerefMut for Tui {
 impl Drop for Tui {
     #[inline]
     fn drop(&mut self) {
-        self.exit().unwrap();
+        self.exit().unwrap_or_else(|err| error!("Unable to exit TUI: {}", err));
     }
 }
 

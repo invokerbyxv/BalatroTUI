@@ -14,7 +14,7 @@ use crate::event::Event;
 use crate::tui::TuiComponent;
 
 use super::blind::{Blind, BlindType};
-use super::deck::{Deck, Selectable};
+use super::deck::Deck;
 use super::round::{Round, RoundProperties};
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]

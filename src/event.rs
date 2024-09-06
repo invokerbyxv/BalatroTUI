@@ -5,6 +5,7 @@ use crossterm::event::{Event as CrosstermEvent, EventStream, KeyEvent, MouseEven
 use futures::{FutureExt, StreamExt};
 use tokio::{select, spawn, sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender}, task::JoinHandle, time::interval};
 use tokio_util::sync::CancellationToken;
+use tracing::error;
 
 /// Terminal events.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,6 +19,7 @@ pub enum Event {
 /// Terminal event handler.
 #[derive(Debug)]
 pub struct EventHandler {
+    #[allow(dead_code)]
     sender: UnboundedSender<Event>,
     receiver: UnboundedReceiver<Event>,
     handler: Option<JoinHandle<()>>,
@@ -45,7 +47,7 @@ impl EventHandler {
                         break;
                     }
                     _ = tick_delay => {
-                        _sender.send(Event::Tick).unwrap();
+                        _sender.send(Event::Tick).unwrap_or_else(|err| error!("Unable to send Tick event over sender channel: {}", err));
                     }
                     _ = _stop_cancellation_token.cancelled() => {
                         break;
@@ -54,14 +56,14 @@ impl EventHandler {
                         match evt {
                             CrosstermEvent::Key(key) => {
                                 if key.kind == crossterm::event::KeyEventKind::Press {
-                                    _sender.send(Event::Key(key)).unwrap();
+                                    _sender.send(Event::Key(key)).unwrap_or_else(|err| error!("Unable to send Key event over sender channel: {}", err));
                                 }
                             },
                             CrosstermEvent::Mouse(mouse) => {
-                                _sender.send(Event::Mouse(mouse)).unwrap();
+                                _sender.send(Event::Mouse(mouse)).unwrap_or_else(|err| error!("Unable to send Mouse event over sender channel: {}", err));
                             },
                             CrosstermEvent::Resize(x, y) => {
-                                _sender.send(Event::Resize(x, y)).unwrap();
+                                _sender.send(Event::Resize(x, y)).unwrap_or_else(|err| error!("Unable to send Resize event over sender channel: {}", err));
                             },
                             CrosstermEvent::FocusLost => { },
                             CrosstermEvent::FocusGained => { },
@@ -95,7 +97,7 @@ impl EventHandler {
     pub async fn stop(&mut self) -> Result<(), Box<dyn Error>> {
         self.stop_cancellation_token.cancel();
         if let Some(handle) = self.handler.take() {
-            handle.await.unwrap();
+            handle.await.unwrap_or_else(|err| error!("Unable to stop event handle: {}", err));
         }
         Ok(())
     }
