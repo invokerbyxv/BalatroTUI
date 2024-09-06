@@ -40,10 +40,8 @@ pub struct Round {
 
 impl Round {
     pub fn start(&mut self) -> Result<(), Box<dyn Error>> {
-        let mut deck = self.deck.write().unwrap();
-        self.hand = deck.draw_random(self.properties.hand_size)?;
-        self.properties.round_number = 1;
-        self.hand.sort_by_rank();
+        self.hand = self.deck.write().unwrap().draw_random(self.properties.hand_size)?;
+        self.hand.cards.sort_by_rank();
         Ok(())
     }
 
@@ -51,7 +49,7 @@ impl Round {
         let mut new_cards = self.deck.write().unwrap().draw_random(last_cards.len())?;
         self.history.cards.append(&mut last_cards);
         self.hand.cards.append(&mut new_cards.cards);
-        self.hand.sort_by_rank();
+        self.hand.cards.sort_by_rank();
 
         Ok(())
     }

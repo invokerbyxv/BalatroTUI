@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, collections::HashSet, error::Error};
+use std::{collections::HashSet, error::Error};
 use crossterm::event::KeyCode;
 use once_cell::sync::Lazy;
 use rand::{thread_rng, seq::SliceRandom};
@@ -105,23 +105,6 @@ impl Selectable for Deck {
         self.selected.clear();
         self.cards = leftover.into();
         Ok(selected)
-    }
-}
-
-pub trait Sortable {
-    fn sort_by_suit(&mut self);
-    fn sort_by_rank(&mut self);
-}
-
-impl Sortable for Deck {
-    #[inline]
-    fn sort_by_suit(&mut self) {
-        self.cards.sort_by_key(|c| (c.suit, Reverse(c.rank)));
-    }
-
-    #[inline]
-    fn sort_by_rank(&mut self) {
-        self.cards.sort_by_key(|c| (Reverse(c.rank), c.suit));
     }
 }
 

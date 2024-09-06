@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error, fmt::{Display, Formatter, Result a
 use itertools::Itertools;
 use strum::EnumIter;
 
-use super::card::{Card, Rank, Suit};
+use super::card::{Card, Rank, Sortable, Suit};
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
 pub enum ScoringHand {
@@ -80,7 +80,7 @@ impl Scorer {
         }).into_iter().sorted_by(|a, b| b.1.cmp(&a.1)).collect();
 
         // TODO: Sort by rank before forming groups.
-        let rank_groups: Vec<(Rank, usize)> = cards.iter().fold(HashMap::new(), |mut groups, card| {
+        let rank_groups: Vec<(Rank, usize)> = cards.clone().sorted_by_rank().iter().fold(HashMap::new(), |mut groups, card| {
             groups.entry(card.rank)
                 .and_modify(|e| *e += 1)
                 .or_insert(1);

@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::{cmp::Reverse, fmt::{Display, Formatter, Result as FmtResult}};
 
 use strum_macros::EnumIter;
 
@@ -93,6 +93,39 @@ impl Display for Card {
     #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}{}", self.suit, self.rank)
+    }
+}
+
+pub trait Sortable {
+    fn sort_by_suit(&mut self);
+    fn sort_by_rank(&mut self);
+    fn sorted_by_suit(self) -> Self;
+    fn sorted_by_rank(self) -> Self;
+}
+
+impl Sortable for Vec<Card> {
+    #[inline]
+    fn sort_by_suit(&mut self) {
+        self.sort_by_key(|c| (c.suit, Reverse(c.rank)));
+    }
+
+    #[inline]
+    fn sort_by_rank(&mut self) {
+        self.sort_by_key(|c| (Reverse(c.rank), c.suit));
+    }
+
+    #[inline]
+    fn sorted_by_suit(self) -> Self {
+        let mut cards = self.clone();
+        cards.sort_by_suit();
+        cards
+    }
+
+    #[inline]
+    fn sorted_by_rank(self) -> Self {
+        let mut cards = self.clone();
+        cards.sort_by_rank();
+        cards
     }
 }
 
