@@ -14,6 +14,7 @@ impl BlindBadgeWidget {
 impl StatefulWidget for BlindBadgeWidget {
     type State = Blind;
 
+    // TODO: Use image instead of canvas
     #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let bound = area.height as f64;
@@ -36,7 +37,7 @@ impl StatefulWidget for BlindBadgeWidget {
                     .rev()
                     .enumerate()
                     .for_each(|(idx, line)| {
-                        ctx.print(-(0.25 * bound), (idx as f64) * 0.5, line);
+                        ctx.print(-1.0, idx as f64, line);
                     });
             })
             .x_bounds([-bound, bound])

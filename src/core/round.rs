@@ -89,7 +89,7 @@ impl Round {
 impl TuiComponent for Round {
     #[inline]
     fn draw(&mut self, frame: &mut Frame, rect: Rect) {
-        let [_play_area, deck_area] = Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(rect);
+        let [play_area, deck_area] = Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(rect);
         self.hand.draw(frame, deck_area);
     }
 

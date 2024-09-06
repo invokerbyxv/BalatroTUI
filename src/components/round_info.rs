@@ -41,7 +41,7 @@ impl StatefulWidget for RoundInfoWidget {
         let [blind_badge_area, round_info_area] = Layout::horizontal([
             Constraint::Length(ROUND_INFO_CONTENT_HEIGHT * KERNING_MULTIPLIER),
             Constraint::Fill(1),
-        ]).flex(Flex::SpaceAround).areas(inner_area);
+        ]).areas(inner_area);
 
         // Render widgets
         BlindBadgeWidget::new().render(blind_badge_area.inner(Margin::new(2, 1)), buf, &mut state.properties.blind);

@@ -25,16 +25,12 @@ impl StatefulWidget for RoundScoreWidget {
         let round_score_content = [Line::from("Round Score").centered()];
 
         // Prepare areas
-        let [inner_area] = Layout::vertical([
-            Constraint::Length(ROUND_SCORE_CONTENT_HEIGHT),
-        ]).flex(Flex::Center).areas(area);
+        let [inner_area] = Layout::vertical([Constraint::Length(ROUND_SCORE_CONTENT_HEIGHT)]).flex(Flex::Center).areas(area);
         let [round_score_text_area, round_score_value_area] = Layout::horizontal([
             Constraint::Fill(2),
             Constraint::Fill(5),
-        ]).flex(Flex::Center).areas(inner_area);
-        let [round_score_text_area] = Layout::vertical(vec![
-            Constraint::Length(1),
-        ]).flex(Flex::SpaceAround).areas(round_score_text_area);
+        ]).areas(inner_area);
+        let [round_score_text_area] = Layout::vertical(vec![Constraint::Length(1)]).flex(Flex::SpaceAround).areas(round_score_text_area);
 
         // Render widgets
         TextBoxWidget::new(round_score_content).render(round_score_text_area, buf);
