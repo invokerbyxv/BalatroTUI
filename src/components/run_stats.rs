@@ -11,17 +11,14 @@ pub struct RunStatsWidget { }
 
 impl RunStatsWidget {
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         RunStatsWidget { }
     }
 }
 
-// TODO: Use Layout with flex wherever possible.
-
 impl StatefulWidget for RunStatsWidget {
     type State = Run;
 
-    #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Prepare areas
         let [inner_area] = Layout::vertical([Constraint::Length(RUN_STATS_CONTENT_HEIGHT)]).flex(Flex::Center).areas(area);

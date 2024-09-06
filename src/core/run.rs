@@ -28,6 +28,7 @@ pub struct RunProperties {
 }
 
 impl Default for RunProperties {
+    #[inline]
     fn default() -> Self {
         Self {
             ante: 1,
@@ -51,6 +52,7 @@ pub struct Run {
 }
 
 impl Run {
+    #[inline]
     pub fn new(deck: Arc<RwLock<Deck>>, properties: RunProperties) -> Run {
         Run {
             deck: deck.clone(),
@@ -79,7 +81,6 @@ impl Run {
 
 // TODO: Move into component chunks and un-implement TuiComponent for Run.
 impl TuiComponent for Run {
-    #[inline]
     fn draw(&mut self, frame: &mut Frame, rect: Rect) {
         // Prepare areas
         let [meta_area, play_area] = Layout::horizontal([Constraint::Percentage(25), Constraint::Fill(1)]).areas(rect);
@@ -105,7 +106,6 @@ impl TuiComponent for Run {
         self.round.draw(frame, play_area);
     }
 
-    #[inline]
     fn handle_events(&mut self, event: Event) {
         self.round.handle_events(event);
     }

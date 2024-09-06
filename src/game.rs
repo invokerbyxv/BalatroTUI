@@ -21,7 +21,6 @@ impl Game {
         Game { run, should_quit: false, }
     }
 
-    #[inline]
     pub async fn start(&mut self) -> Result<(), Box<dyn Error>> {
         // Enter TUI
         let mut tui = Tui::new()?;
@@ -55,7 +54,6 @@ impl TuiComponent for Game {
         self.run.draw(frame, rect);
     }
 
-    #[inline]
     fn handle_events(&mut self, event: Event) {
         match event {
             Event::Key(key_event) => {

@@ -42,7 +42,7 @@ pub enum Rank {
 
 impl Rank {
     #[inline]
-    pub fn get_score(&self) -> usize {
+    pub const fn get_score(&self) -> usize {
         match *self {
             Rank::Two => 2,
             Rank::Three => 3,
@@ -90,6 +90,7 @@ pub struct Card {
 }
 
 impl Display for Card {
+    #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}{}", self.suit, self.rank)
     }

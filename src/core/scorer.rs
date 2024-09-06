@@ -1,10 +1,11 @@
 use std::{collections::HashMap, error::Error, fmt::{Display, Formatter, Result as FmtResult}};
 
 use itertools::Itertools;
+use strum::EnumIter;
 
 use super::card::{Card, Rank, Suit};
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
 pub enum ScoringHand {
     FlushFive = 0,
     FlushHouse,
@@ -23,6 +24,7 @@ pub enum ScoringHand {
 }
 
 impl Display for ScoringHand {
+    #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         let display = match *self {
             ScoringHand::FlushFive => "Flush Five",
@@ -45,12 +47,11 @@ impl Display for ScoringHand {
 }
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq)]
-pub struct Scorer {
-}
+pub struct Scorer { }
 
 impl Scorer {
     #[inline]
-    pub fn get_chips_and_multiplier(scoring_hand: ScoringHand) -> Result<(usize, usize), Box<dyn Error>> {
+    pub const fn get_chips_and_multiplier(scoring_hand: ScoringHand) -> Result<(usize, usize), Box<dyn Error>> {
         Ok(match scoring_hand {
             ScoringHand::FlushFive => (160, 16),
             ScoringHand::FlushHouse => (140, 14),
@@ -95,6 +96,7 @@ impl Scorer {
         }
 
         if rank_groups.len() >= 2 && suit_groups[0].1 == 5 && rank_groups[0].1 == 3 && rank_groups[1].1 == 2 {
+            // TODO: Generalize and abstract the played_ranks logic into helper. Accept range as input.
             let mut played_ranks = vec![];
             played_ranks.append(&mut vec![rank_groups[0].0; rank_groups[0].1]);
             played_ranks.append(&mut vec![rank_groups[1].0; rank_groups[1].1]);
@@ -152,6 +154,7 @@ impl Scorer {
         Ok((base_chips + chips_increment) * multiplier)
     }
 
+    #[inline]
     pub fn score_chips_from_ranks(ranks: &Vec<Rank>) -> Result<usize, Box<dyn Error>> {
         Ok(ranks.iter().fold(0, |acc, rank| acc + rank.get_score()))
     }

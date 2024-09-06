@@ -6,7 +6,8 @@ use crate::core::blind::Blind;
 pub struct BlindBadgeWidget { }
 
 impl BlindBadgeWidget {
-    pub fn new() -> Self {
+    #[inline]
+    pub const fn new() -> Self {
         BlindBadgeWidget { }
     }
 }
@@ -15,7 +16,6 @@ impl StatefulWidget for BlindBadgeWidget {
     type State = Blind;
 
     // TODO: Use image instead of canvas
-    #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let bound = area.height as f64;
 

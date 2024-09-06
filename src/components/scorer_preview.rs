@@ -6,14 +6,12 @@ use super::text_box::TextBoxWidget;
 
 const SCORER_PREVIEW_CONTENT_HEIGHT: u16 = 8;
 
-// TODO: Use nested area constraints for min-maxing.
-
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ScorerPreviewWidget { }
 
 impl ScorerPreviewWidget {
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         ScorerPreviewWidget { }
     }
 }
@@ -23,7 +21,6 @@ impl ScorerPreviewWidget {
 impl StatefulWidget for ScorerPreviewWidget {
     type State = Vec<Card>;
 
-    #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Prepare variables
         // TODO: Pass these from outside or implement caching to avoid needless calls.
@@ -51,6 +48,5 @@ impl StatefulWidget for ScorerPreviewWidget {
         TextBoxWidget::bordered([Line::from(chips.to_string()).centered()]).render(chips_area, buf);
         TextBoxWidget::new([Line::from("×".to_string()).centered()]).render(multiply_sign_area, buf);
         TextBoxWidget::bordered([Line::from(multiplier.to_string()).centered()]).render(multiplier_area, buf);
-
     }
 }

@@ -12,18 +12,16 @@ pub struct RoundInfoWidget { }
 
 impl RoundInfoWidget {
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         RoundInfoWidget { }
     }
 }
 
 // TODO: Add pub(crate) qualifications
-// TODO: Replace constraints Length with Max and Fill with Min.
 
 impl StatefulWidget for RoundInfoWidget {
     type State = Round;
 
-    #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Prepare variables
         let round_info_content = [
@@ -45,7 +43,6 @@ impl StatefulWidget for RoundInfoWidget {
 
         // Render widgets
         BlindBadgeWidget::new().render(blind_badge_area.inner(Margin::new(2, 1)), buf, &mut state.properties.blind);
-        // TODO: Move to TextBox that will also display border
         TextBoxWidget::bordered(round_info_content).flex(Flex::SpaceAround).render(round_info_area, buf);
     }
 }

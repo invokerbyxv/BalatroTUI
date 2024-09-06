@@ -1,4 +1,4 @@
-use ratatui::{buffer::Buffer, layout::{Alignment, Constraint, Flex, Layout, Margin, Rect}, text::Line, widgets::{block::{Position, Title}, Block, BorderType, Widget}};
+use ratatui::{buffer::Buffer, layout::{Alignment, Constraint, Flex, Layout, Margin, Rect}, text::Line, widgets::{block::Title, Block, BorderType, Widget}};
 
 #[derive(Debug, Default, Clone)]
 pub struct TextBoxWidget<'a> {
@@ -85,7 +85,6 @@ impl<'a> TextBoxWidget<'a> {
 // TODO: Re-implement using ratatui-image.
 
 impl<'a> Widget for TextBoxWidget<'a> {
-    #[inline]
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut inner_area = area;
 

@@ -1,14 +1,16 @@
 use std::{error::Error, fmt::{Display, Formatter, Result as FmtResult}};
 
 use ratatui::style::Color;
+use strum::EnumIter;
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
 pub enum BlindType {
     SmallBlind = 0,
     BigBlind = 1,
     BossBlind = 2,
 }
 
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
 pub enum Bosses {
     TheHook,
     TheHouse,
@@ -55,7 +57,7 @@ impl Blind {
     }
 
     #[inline]
-    pub fn get_color(&self) -> Color {
+    pub const fn get_color(&self) -> Color {
         match self.blind_type {
             BlindType::SmallBlind => Color::Blue,
             BlindType::BigBlind => Color::Green,
@@ -65,6 +67,7 @@ impl Blind {
 }
 
 impl Display for Blind {
+    #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         let text = match self.blind_type {
             BlindType::SmallBlind => "Small Blind",

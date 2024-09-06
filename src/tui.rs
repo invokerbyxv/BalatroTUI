@@ -4,7 +4,7 @@ use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{backend::CrosstermBackend as Backend, layout::{Constraint, Flex, Layout, Rect}, style::{Color, Style, Styled}, text::{Line, Span, Text}, Frame, Terminal};
+use ratatui::{backend::CrosstermBackend as Backend, layout::Rect, style::{Color, Style, Styled}, text::{Line, Span, Text}, Frame, Terminal};
 use std::{error::Error, io::{stderr, Stderr}, ops::{Deref, DerefMut}, panic::set_hook, process::exit};
 use color_eyre::{config::HookBuilder, Result as EyreResult};
 
@@ -21,7 +21,6 @@ impl Tui {
         Ok(Self { terminal })
     }
 
-    #[inline]
     pub fn enter(&self) -> Result<(), Box<dyn Error>> {
         enable_raw_mode()?;
         init_panic_hook()?;
@@ -34,7 +33,6 @@ impl Tui {
         Ok(())
     }
 
-    #[inline]
     pub fn exit(&self) -> Result<(), Box<dyn Error>> {
         crossterm::execute!(
             stderr(),
@@ -46,7 +44,6 @@ impl Tui {
         Ok(())
     }
 
-    #[inline]
     pub fn suspend(&self) -> Result<(), Box<dyn Error>> {
         self.exit()?;
         #[cfg(not(windows))]
@@ -54,7 +51,6 @@ impl Tui {
         Ok(())
     }
 
-    #[inline]
     pub fn resume(&self) -> Result<(), Box<dyn Error>> {
         self.enter()?;
         Ok(())
@@ -89,6 +85,7 @@ pub trait TuiComponent {
     fn handle_events(&mut self, _event: Event) { }
 }
 
+// TODO: Move to a utility module
 pub fn get_line_with_chips<'a, T: Into<Span<'a>>>(content: T, color: Color) -> Line<'a> {
     Line::from(vec![
         // TODO: Consider using BigText here

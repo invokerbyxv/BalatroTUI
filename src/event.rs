@@ -16,7 +16,6 @@ pub enum Event {
 }
 
 /// Terminal event handler.
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct EventHandler {
     sender: UnboundedSender<Event>,
@@ -26,7 +25,6 @@ pub struct EventHandler {
 }
 
 impl EventHandler {
-    #[inline]
     pub fn new(tick_rate: u64) -> Self {
         let tick_rate = Duration::from_millis(tick_rate);
 
@@ -84,7 +82,6 @@ impl EventHandler {
 
     // TODO: Handle all errors using single interceptor point. Create custom errors for handling different error/panic types.
 
-    #[inline]
     pub async fn next(&mut self) -> Result<Event, Box<dyn Error>> {
         self.receiver
             .recv()
@@ -95,7 +92,6 @@ impl EventHandler {
             )))
     }
 
-    #[inline]
     pub async fn stop(&mut self) -> Result<(), Box<dyn Error>> {
         self.stop_cancellation_token.cancel();
         if let Some(handle) = self.handler.take() {

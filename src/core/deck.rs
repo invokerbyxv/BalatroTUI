@@ -12,6 +12,7 @@ use super::card::{Card, Rank, Suit};
 
 // TODO: Use dynamic trait switching to achieve suit and rank sorting. Feed the impl directly to card instead of MultiSortable
 // TODO: Impl default traits for all structs
+// TODO: Migrate Drawable and Selectable to card widget instead
 
 const MAXIMUM_SELECTED_CARDS: usize = 5;
 
@@ -44,6 +45,7 @@ impl Deck {
 }
 
 impl Default for Deck {
+    #[inline]
     fn default() -> Self {
         Deck::standard()
     }
@@ -54,7 +56,6 @@ pub trait Drawable {
 }
 
 impl Drawable for Deck {
-    #[inline]
     fn draw_random(&mut self, hand_size: usize) -> Result<Self, Box<dyn Error>> {
         if hand_size > self.cards.len() {
             // TODO: Define custom error
@@ -127,7 +128,6 @@ impl Sortable for Deck {
 // TODO: Use ListWidget to handle selection instead.
 
 impl TuiComponent for Deck {
-    #[inline]
     fn draw(&mut self, frame: &mut Frame, rect: Rect) {
         let deck_layout = Layout::horizontal(vec![Constraint::Fill(1); self.cards.len()]).split(rect);
         let hover_position = self.cards.pos;
@@ -148,7 +148,6 @@ impl TuiComponent for Deck {
         }
     }
 
-    #[inline]
     fn handle_events(&mut self, event: Event) {
         if let Event::Key(key_event) = event {
             match key_event.code {

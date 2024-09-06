@@ -22,18 +22,21 @@ pub struct CardWidgetState {
 }
 
 impl CardWidgetState {
-    pub fn new(card: Card, visual_state: CardVisualState) -> Self {
+    #[inline]
+    pub const fn new(card: Card, visual_state: CardVisualState) -> Self {
         CardWidgetState { card, visual_state }
     }
 }
 
 impl From<Card> for CardWidgetState {
+    #[inline]
     fn from(value: Card) -> Self {
         CardWidgetState::new(value, CardVisualState::Normal)
     }
 }
 
 impl From<&mut Card> for CardWidgetState {
+    #[inline]
     fn from(value: &mut Card) -> Self {
         CardWidgetState::new(value.clone(), CardVisualState::Normal)
     }
@@ -44,7 +47,8 @@ impl From<&mut Card> for CardWidgetState {
 pub struct CardWidget { }
 
 impl CardWidget {
-    pub fn new() -> Self {
+    #[inline]
+    pub const fn new() -> Self {
         CardWidget { }
     }
 }
@@ -52,7 +56,6 @@ impl CardWidget {
 impl StatefulWidget for CardWidget {
     type State = CardWidgetState;
 
-    #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Prepare variables
         let border_set = match state.visual_state {

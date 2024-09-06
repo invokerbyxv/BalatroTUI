@@ -11,7 +11,7 @@ pub struct RoundScoreWidget { }
 
 impl RoundScoreWidget {
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         RoundScoreWidget { }
     }
 }
@@ -19,7 +19,6 @@ impl RoundScoreWidget {
 impl StatefulWidget for RoundScoreWidget {
     type State = Round;
 
-    #[inline]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Prepare widgets
         let round_score_content = [Line::from("Round Score").centered()];
