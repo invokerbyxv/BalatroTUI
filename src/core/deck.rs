@@ -42,21 +42,22 @@ impl Deck {
         // TODO: Bias with seed
         self.cards.shuffle(&mut thread_rng());
     }
-}
 
-impl Default for Deck {
     #[inline]
-    fn default() -> Self {
-        Deck::standard()
+    pub fn select(&mut self, selection: usize) {
+        self.selected.insert(selection);
     }
-}
 
-pub trait Drawable {
-    fn draw_random(&mut self, hand_size: usize) -> Result<Self, Box<dyn Error>> where Self : Sized;
-}
+    #[inline]
+    pub fn deselect(&mut self, selection: usize) {
+        self.selected.remove(&selection);
+    }
 
-impl Drawable for Deck {
-    fn draw_random(&mut self, hand_size: usize) -> Result<Self, Box<dyn Error>> {
+    pub fn peek_selected(&self) -> Result<Vec<Card>, Box<dyn Error>> {
+        Ok(self.selected.iter().map(|&idx| self.cards.inner[idx]).collect())
+    }
+
+    pub fn draw_random(&mut self, hand_size: usize) -> Result<Self, Box<dyn Error>> {
         if hand_size > self.cards.len() {
             // TODO: Define custom error
             Err("Hand size cannot be greater than the source deck.")?
@@ -68,33 +69,8 @@ impl Drawable for Deck {
             selected: HashSet::new(),
         })
     }
-}
 
-pub trait Selectable where Self : Drawable {
-    fn select(&mut self, selection: usize);
-    fn deselect(&mut self, selection: usize);
-    fn peek_selected(&self) -> Result<Vec<Card>, Box<dyn Error>>;
-    fn draw_selected(&mut self) -> Result<Vec<Card>, Box<dyn Error>>;
-}
-
-impl Selectable for Deck {
-    #[inline]
-    fn select(&mut self, selection: usize) {
-        self.selected.insert(selection);
-    }
-
-    #[inline]
-    fn deselect(&mut self, selection: usize) {
-        self.selected.remove(&selection);
-    }
-
-    #[inline]
-    fn peek_selected(&self) -> Result<Vec<Card>, Box<dyn Error>> {
-        Ok(self.selected.iter().map(|&idx| self.cards.inner[idx]).collect())
-    }
-
-    #[inline]
-    fn draw_selected(&mut self) -> Result<Vec<Card>, Box<dyn Error>> {
+    pub fn draw_selected(&mut self) -> Result<Vec<Card>, Box<dyn Error>> {
         let (selected, leftover): (Vec<_>, Vec<_>) = self.cards.iter().enumerate().partition_map(|(idx, card)| {
             if self.selected.contains(&idx) {
                 Either::Left(card)
@@ -105,6 +81,13 @@ impl Selectable for Deck {
         self.selected.clear();
         self.cards = leftover.into();
         Ok(selected)
+    }
+}
+
+impl Default for Deck {
+    #[inline]
+    fn default() -> Self {
+        Deck::standard()
     }
 }
 
