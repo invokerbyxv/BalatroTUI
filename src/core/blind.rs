@@ -1,29 +1,39 @@
-use std::{error::Error, fmt::{Display, Formatter, Result as FmtResult}};
+use std::{
+    error::Error,
+    fmt::{Display, Formatter, Result as FmtResult},
+    str::FromStr,
+};
 
 use ratatui::style::Color;
-use strum::EnumIter;
+use strum::{Display as EnumDisplay, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr, VariantArray};
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
+#[derive(Clone, Copy, Debug, Default, EnumDisplay, EnumCount, EnumProperty, Eq, Hash, IntoStaticStr, Ord, PartialEq, PartialOrd)]
+#[repr(usize)]
 pub enum BlindType {
-    SmallBlind = 0,
-    BigBlind = 1,
-    BossBlind = 2,
+    #[default]
+    #[strum(serialize = "Small Blind", props(score_multiplier = "2", color = "blue"))]
+    Small,
+    #[strum(serialize = "Big Blind", props(score_multiplier = "3", color = "green"))]
+    Big,
+    #[strum(serialize = "Boss Blind", props(score_multiplier = "4", color = "red"))]
+    Boss(Bosses),
 }
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
+#[derive(Clone, Copy, Debug, EnumDisplay, EnumCount, EnumIter, EnumString, Eq, Hash, IntoStaticStr, Ord, PartialEq, PartialOrd, VariantArray,)]
+#[strum(prefix = "The ")]
 pub enum Bosses {
-    TheHook,
-    TheHouse,
-    TheWall,
-    TheWheel,
-    TheArm,
-    TheClub,
-    TheFish,
-    ThePsychic,
-    TheGoad,
-    TheWater,
-    TheWindow,
-    TheManacle,
+    Hook,
+    House,
+    Wall,
+    Wheel,
+    Arm,
+    Club,
+    Fish,
+    Psychic,
+    Goad,
+    Water,
+    Window,
+    Manacle,
 }
 
 const BLIND_BASE_AMOUNTS: [usize; 8] = [3, 8, 20, 50, 110, 200, 350, 500];
@@ -42,7 +52,7 @@ impl Blind {
             Err("Ante has crossed maximum computable ante. Need additional implementation.")?;
         }
 
-        let blind_type_multiple = blind_type as usize + 2;
+        let blind_type_multiple = blind_type.get_int("score_multiplier").unwrap();
         let chips_multiplier = 50;
 
         Ok(chips_multiplier * blind_type_multiple * BLIND_BASE_AMOUNTS[ante - 1])
@@ -57,23 +67,14 @@ impl Blind {
     }
 
     #[inline]
-    pub const fn get_color(&self) -> Color {
-        match self.blind_type {
-            BlindType::SmallBlind => Color::Blue,
-            BlindType::BigBlind => Color::Green,
-            BlindType::BossBlind => Color::Red,
-        }
+    pub fn get_color(&self) -> Color {
+        Color::from_str(self.blind_type.get_str("color").unwrap()).unwrap()
     }
 }
 
 impl Display for Blind {
     #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        let text = match self.blind_type {
-            BlindType::SmallBlind => "Small Blind",
-            BlindType::BigBlind => "Big Blind",
-            BlindType::BossBlind => "Boss Blind",
-        };
-        write!(f, "{}", text)
+        write!(f, "{}", self.blind_type)
     }
 }

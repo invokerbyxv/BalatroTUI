@@ -20,7 +20,7 @@ impl Default for RoundProperties {
     #[inline]
     fn default() -> Self {
         Self {
-            blind: Blind::new(BlindType::SmallBlind, 1).unwrap(),
+            blind: Blind::new(BlindType::Small, 1).unwrap(),
             hand_size: 10,
             hands: 3,
             discards: 3,

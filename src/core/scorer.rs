@@ -1,49 +1,41 @@
 use std::{collections::HashMap, error::Error, fmt::{Display, Formatter, Result as FmtResult}};
 
 use itertools::Itertools;
-use strum::EnumIter;
+use strum::{Display, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr};
 
 use super::card::{Card, Rank, Sortable, Suit};
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
+#[derive(Clone, Copy, Debug, Default, Display, EnumCount, EnumIter, EnumProperty, EnumString, Eq, Hash, IntoStaticStr, Ord, PartialEq, PartialOrd)]
 pub enum ScoringHand {
-    FlushFive = 0,
+    #[default]
+    #[strum(serialize = "")]
+    None = 0,
+    #[strum(serialize = "Flush Five", props(chips = "160", multiplier = "16"))]
+    FlushFive,
+    #[strum(serialize = "Flush House", props(chips = "140", multiplier = "14"))]
     FlushHouse,
+    #[strum(serialize = "Five of a Kind", props(chips = "120", multiplier = "12"))]
     FiveOfAKind,
+    #[strum(serialize = "Royal Flush", props(chips = "100", multiplier = "8"))]
     RoyalFlush, // GroupSuit(5) | SeqRank(5) + Ace
+    #[strum(serialize = "Straight Flush", props(chips = "60", multiplier = "7"))]
     StraightFlush, // GroupSuit(5) | SeqRank(5)
+    #[strum(serialize = "Four of a Kind", props(chips = "40", multiplier = "4"))]
     FourOfAKind,
+    #[strum(serialize = "Full House", props(chips = "35", multiplier = "4"))]
     FullHouse,
+    #[strum(serialize = "Flush", props(chips = "30", multiplier = "4"))]
     Flush,
+    #[strum(serialize = "Straight", props(chips = "30", multiplier = "3"))]
     Straight, // SeqRank(5)
+    #[strum(serialize = "Three of a Kind", props(chips = "20", multiplier = "2"))]
     ThreeOfAKind,
+    #[strum(serialize = "Two Pair", props(chips = "20", multiplier = "2"))]
     TwoPair,
+    #[strum(serialize = "Pair", props(chips = "10", multiplier = "2"))]
     Pair,
+    #[strum(serialize = "High Card", props(chips = "5", multiplier = "1"))]
     HighCard,
-    None,
-}
-
-impl Display for ScoringHand {
-    #[inline]
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        let display = match *self {
-            ScoringHand::FlushFive => "Flush Five",
-            ScoringHand::FlushHouse => "Flush House",
-            ScoringHand::FiveOfAKind => "Five Of A Kind",
-            ScoringHand::RoyalFlush => "Royal Flush",
-            ScoringHand::StraightFlush => "Straight Flush",
-            ScoringHand::FourOfAKind => "Four Of A Kind",
-            ScoringHand::FullHouse => "Full House",
-            ScoringHand::Flush => "Flush",
-            ScoringHand::Straight => "Straight",
-            ScoringHand::ThreeOfAKind => "Three Of A Kind",
-            ScoringHand::TwoPair => "Two Pair",
-            ScoringHand::Pair => "Pair",
-            ScoringHand::HighCard => "High Card",
-            ScoringHand::None => "",
-        };
-        write!(f, "{}", display)
-    }
 }
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq)]
@@ -51,23 +43,11 @@ pub struct Scorer { }
 
 impl Scorer {
     #[inline]
-    pub const fn get_chips_and_multiplier(scoring_hand: ScoringHand) -> Result<(usize, usize), Box<dyn Error>> {
-        Ok(match scoring_hand {
-            ScoringHand::FlushFive => (160, 16),
-            ScoringHand::FlushHouse => (140, 14),
-            ScoringHand::FiveOfAKind => (120, 12),
-            ScoringHand::RoyalFlush => (100, 8),
-            ScoringHand::StraightFlush => (100, 8),
-            ScoringHand::FourOfAKind => (60, 7),
-            ScoringHand::FullHouse => (40, 4),
-            ScoringHand::Flush => (35, 4),
-            ScoringHand::Straight => (30, 4),
-            ScoringHand::ThreeOfAKind => (30, 3),
-            ScoringHand::TwoPair => (20, 2),
-            ScoringHand::Pair => (10, 2),
-            ScoringHand::HighCard => (5, 1),
-            ScoringHand::None => (0, 0),
-        })
+    pub fn get_chips_and_multiplier(scoring_hand: ScoringHand) -> Result<(usize, usize), Box<dyn Error>> {
+        Ok((
+            scoring_hand.get_int("chips").unwrap(),
+            scoring_hand.get_int("multiplier").unwrap(),
+        ))
     }
 
     #[inline]

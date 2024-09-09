@@ -63,7 +63,7 @@ impl Run {
                 deck: deck.clone(),
                 properties: RoundProperties {
                     round_number: 1,
-                    blind: Blind::new(BlindType::SmallBlind, properties.ante).unwrap(),
+                    blind: Blind::new(BlindType::Small, properties.ante).unwrap(),
                     ..Default::default()
                 },
                 ..Default::default()

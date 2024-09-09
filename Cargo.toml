@@ -19,6 +19,5 @@ human-panic = "2.0.1"
 libc = "0.2.156"
 better-panic = "0.3.0"
 strip-ansi-escapes = "0.2.0"
-strum_macros = "0.26.4"
-strum = "0.26.3"
+strum = { version = "0.26.3", features = ["derive"] }
 tracing = "0.1.40"

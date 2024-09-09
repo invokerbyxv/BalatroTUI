@@ -1,4 +1,5 @@
 use ratatui::{buffer::Buffer, layout::{Constraint, Layout, Margin, Rect}, symbols::border, text::Line, widgets::{Block, Paragraph, StatefulWidget, Widget}};
+use strum::{Display, EnumCount, EnumIter, EnumString, IntoStaticStr};
 
 use crate::core::card::Card;
 
@@ -7,7 +8,7 @@ use super::text_box::TextBoxWidget;
 const CARD_WIDTH: u16 = 12;
 const CARD_HEIGHT: u16 = 9;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, Display, EnumCount, EnumIter, EnumString, Eq, Hash, IntoStaticStr, PartialEq)]
 pub enum CardVisualState {
     #[default]
     Normal,
@@ -35,13 +36,19 @@ impl From<Card> for CardWidgetState {
     }
 }
 
-impl From<&mut Card> for CardWidgetState {
+impl From<&Card> for CardWidgetState {
     #[inline]
-    fn from(value: &mut Card) -> Self {
-        CardWidgetState::new(value.clone(), CardVisualState::Normal)
+    fn from(value: &Card) -> Self {
+        CardWidgetState::new(*value, CardVisualState::Normal)
     }
 }
 
+impl From<&mut Card> for CardWidgetState {
+    #[inline]
+    fn from(value: &mut Card) -> Self {
+        CardWidgetState::new(*value, CardVisualState::Normal)
+    }
+}
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct CardWidget { }

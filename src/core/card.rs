@@ -1,85 +1,53 @@
 use std::{cmp::Reverse, fmt::{Display, Formatter, Result as FmtResult}};
 
-use strum_macros::EnumIter;
+use strum::{Display as EnumDisplay, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr};
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
+#[derive(Clone, Copy, Debug, EnumDisplay, EnumCount, EnumIter, EnumString, Eq, Hash, IntoStaticStr, Ord, PartialEq, PartialOrd)]
 pub enum Suit {
+    #[strum(serialize = "♣")]
     Club,
+    #[strum(serialize = "♦")]
     Diamond,
+    #[strum(serialize = "♥")]
     Heart,
+    #[strum(serialize = "♠")]
     Spade,
 }
 
-impl Display for Suit {
-    #[inline]
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        let suit_display = match *self {
-            Suit::Club => "♣",
-            Suit::Diamond => "♦",
-            Suit::Heart => "♥",
-            Suit::Spade => "♠",
-        };
-        write!(f, "{}", suit_display)
-    }
-}
-
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq, EnumIter)]
+#[derive(Clone, Copy, Debug, EnumDisplay, EnumCount, EnumIter, EnumProperty, EnumString, Eq, Hash, IntoStaticStr, Ord, PartialEq, PartialOrd)]
 pub enum Rank {
-    Two,
+    #[strum(serialize = "2", props(score = "2"))]
+    Two = 2,
+    #[strum(serialize = "3", props(score = "3"))]
     Three,
+    #[strum(serialize = "4", props(score = "4"))]
     Four,
+    #[strum(serialize = "5", props(score = "5"))]
     Five,
+    #[strum(serialize = "6", props(score = "6"))]
     Six,
+    #[strum(serialize = "7", props(score = "7"))]
     Seven,
+    #[strum(serialize = "8", props(score = "8"))]
     Eight,
+    #[strum(serialize = "9", props(score = "9"))]
     Nine,
+    #[strum(serialize = "10", props(score = "10"))]
     Ten,
+    #[strum(serialize = "J", props(score = "10"))]
     Jack,
+    #[strum(serialize = "Q", props(score = "10"))]
     Queen,
+    #[strum(serialize = "K", props(score = "10"))]
     King,
+    #[strum(serialize = "A", props(score = "10"))]
     Ace,
 }
 
 impl Rank {
     #[inline]
-    pub const fn get_score(&self) -> usize {
-        match *self {
-            Rank::Two => 2,
-            Rank::Three => 3,
-            Rank::Four => 4,
-            Rank::Five => 5,
-            Rank::Six => 6,
-            Rank::Seven => 7,
-            Rank::Eight => 8,
-            Rank::Nine => 9,
-            Rank::Ten => 10,
-            Rank::Jack => 10,
-            Rank::Queen => 10,
-            Rank::King => 10,
-            Rank::Ace => 10,
-        }
-    }
-}
-
-impl Display for Rank {
-    #[inline]
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        let rank_display = match *self {
-            Rank::Two => "2",
-            Rank::Three => "3",
-            Rank::Four => "4",
-            Rank::Five => "5",
-            Rank::Six => "6",
-            Rank::Seven => "7",
-            Rank::Eight => "8",
-            Rank::Nine => "9",
-            Rank::Ten => "10",
-            Rank::Jack => "J",
-            Rank::Queen => "Q",
-            Rank::King => "K",
-            Rank::Ace => "A",
-        };
-        write!(f, "{}", rank_display)
+    pub fn get_score(&self) -> usize {
+        self.get_int("score").unwrap()
     }
 }
 
