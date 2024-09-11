@@ -1,5 +1,6 @@
 use std::{collections::HashSet, error::Error};
 use crossterm::event::KeyCode;
+use cycle_cursor::CycleCursor;
 use once_cell::sync::Lazy;
 use rand::{thread_rng, seq::SliceRandom};
 use itertools::{Either, Itertools};
