@@ -225,7 +225,11 @@ impl TrackableDeck {
 impl From<Deck> for TrackableDeck {
     fn from(value: Deck) -> Self {
         Self {
-            cards: CursorVec::new().with_container(value).rotatable(true),
+            cards: if value.is_empty() {
+                CursorVec::new().rotatable(true)
+            } else {
+                CursorVec::new().with_container(value).rotatable(true)
+            },
             selected: HashSet::new(),
         }
     }
