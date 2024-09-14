@@ -1,19 +1,25 @@
-use std::error::Error;
+//! Balatro TUI
+//!
+//! A toy TUI based implementation for the game `Balatro` by [LocalThunk](https://x.com/LocalThunk).
+//!
+//! All rights are reserved by `LocalThunk` for the original game.
 
+use color_eyre::{eyre::Context, Result};
 use game::Game;
 
 pub mod components;
 pub mod core;
-pub mod primitives;
 pub mod event;
 pub mod game;
 pub mod tui;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<()> {
     // Start Game
     let mut game = Game::new();
-    let _ = game.start().await;
+    game.start()
+        .await
+        .wrap_err("Error encountered while running the game.")?;
 
     Ok(())
 }

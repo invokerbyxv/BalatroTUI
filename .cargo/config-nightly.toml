@@ -1,0 +1,17 @@
+[build]
+rustflags = [
+    # Enable nightly lints
+    "-Zcrate-attr=feature(ref_pat_eat_one_layer_2024)",
+    "-Zcrate-attr=feature(non_exhaustive_omitted_patterns_lint)",
+    "-Zcrate-attr=feature(must_not_suspend)",
+    "-Zcrate-attr=feature(multiple_supertrait_upcastable)",
+    "-Zcrate-attr=feature(strict_provenance)",
+    "-Zcrate-attr=feature(async_closure)",
+    "-Wrust-2024-incompatible-pat",
+    "-Wnon-exhaustive-omitted-patterns",
+    "-Wmust-not-suspend",
+    "-Wmultiple-supertrait-upcastable",
+    "-Wlossy-provenance-casts",
+    "-Wfuzzy-provenance-casts",
+    "-Wclosure-returning-async-block",
+]

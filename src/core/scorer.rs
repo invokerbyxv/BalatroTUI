@@ -1,82 +1,231 @@
-use std::error::Error;
+//! Scorer provides generic scoring mechanism for a set of cards played.
+//!
+//! It extends the normal deck scoring to scoring hands available in biased
+//! decks as well with [`ScoringHand::FlushFive`], [`ScoringHand::FlushHouse`]
+//! and [`ScoringHand::FiveOfAKind`].
 
+use color_eyre::{eyre::OptionExt, Result};
 use strum::{Display, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr};
 
 use super::card::{Card, Rank, Sortable};
 
-#[derive(Clone, Copy, Debug, Default, Display, EnumCount, EnumIter, EnumProperty, EnumString, Eq, Hash, IntoStaticStr, Ord, PartialEq, PartialOrd)]
+/// [`ScoringHand`] represents which kind of hand is made when playing a set of
+/// cards.
+///
+/// A scoring hand has associated values of base `chips` and `multiplier` to be
+/// used when scoring the hand.
+///
+/// [`ScoringHand`] also implements conversion from string representation
+///
+/// ```
+/// assert_eq!(ScoringHand::from("Flush"), ScoringHand::Flush);
+/// assert_eq!(
+///     ScoringHand::from("Four of a Kind"),
+///     ScoringHand::FourOfAKind
+/// );
+/// assert_eq!(ScoringHand::from("Two Pair"), ScoringHand::TwoPair);
+/// ```
+///
+/// The scoring hands are provided in order of scoring precedence (reverse in
+/// ordinal).
+///
+/// When scoring, the order of cards doesn't matter. It is internally sorted by
+/// [`Rank`] and [`super::card::Suit`] as necessary.
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Display,
+    EnumCount,
+    EnumIter,
+    EnumProperty,
+    EnumString,
+    Eq,
+    Hash,
+    IntoStaticStr,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
 pub enum ScoringHand {
+    /// Default scoring hand, when no cards played in the hand. This scoring
+    /// hand should not be used directly as its an invalid scoring hand. This
+    /// only provides compatibility of default value before cards are actually
+    /// played.
     #[default]
-    #[strum(serialize = "")]
+    #[strum(serialize = "", props(chips = "0", multiplier = "0"))]
     None = 0,
+    /// [`ScoringHand::FlushFive`] is scored when played cards have five cards
+    /// of the same [`Rank`] and same [`super::card::Suit`].
+    ///
+    /// ## Examples
+    /// - A♥, A♥, A♥, A♥, A♥
+    /// - 9♣, 9♣, 9♣, 9♣, 9♣
     #[strum(serialize = "Flush Five", props(chips = "160", multiplier = "16"))]
     FlushFive,
+    /// [`ScoringHand::FlushHouse`] is scored when played cards have five cards
+    /// of the same [`super::card::Suit`] which have two of same [`Rank`] and
+    /// three of same [`Rank`].
+    ///
+    /// ## Examples
+    /// - K♥, K♥, K♥, 10♥, 10♥
+    /// - 5♣, 7♣, 5♣, 7♣, 5♣
     #[strum(serialize = "Flush House", props(chips = "140", multiplier = "14"))]
     FlushHouse,
+    /// [`ScoringHand::FiveOfAKind`] is scored when played cards have five cards
+    /// of the same [`Rank`] regardless of the [`super::card::Suit`].
+    ///
+    /// ## Examples
+    /// - Q♥, Q♣, Q♦, Q♠, Q♥
+    /// - 6♣, 6♣, 6♣, 6♣, 6♣
     #[strum(serialize = "Five of a Kind", props(chips = "120", multiplier = "12"))]
     FiveOfAKind,
+    /// [`ScoringHand::RoyalFlush`] is scored when played cards have five cards
+    /// of the same [`super::card::Suit`] and they form a straight with a high
+    /// ace.
+    ///
+    /// ## Examples
+    /// - A♥, K♥, Q♥, J♥, 10♥
     #[strum(serialize = "Royal Flush", props(chips = "100", multiplier = "8"))]
     RoyalFlush,
+    /// [`ScoringHand::StraightFlush`] is scored when played cards have five
+    /// cards of the same [`super::card::Suit`] and they form a straight.
+    ///
+    /// ## Examples
+    /// - 7♣, 6♣, 8♣, 5♣, 4♣
+    /// - K♥, Q♥, J♥, 10♥, 9♥
     #[strum(serialize = "Straight Flush", props(chips = "60", multiplier = "7"))]
     StraightFlush,
+    /// [`ScoringHand::FourOfAKind`] is scored when played cards have four cards
+    /// of the same [`Rank`]. The remaining card isn't scored.
+    ///
+    /// ## Examples
+    /// - 7♣, 7♥, 7♦, 7♣, 4♦
+    /// - 6♦, 6♥, 5♦, 6♣, 6♥
     #[strum(serialize = "Four of a Kind", props(chips = "40", multiplier = "4"))]
     FourOfAKind,
+    /// [`ScoringHand::FullHouse`] is scored when played cards have two cards of
+    /// the same [`Rank`] and another three of the same [`Rank`].
+    ///
+    /// ## Examples
+    /// 6♣, 5♥, 5♦, 6♣, 5♦
+    /// 3♥, A♥, A♦, A♣, 3♣
     #[strum(serialize = "Full House", props(chips = "35", multiplier = "4"))]
     FullHouse,
+    /// [`ScoringHand::Flush`] is scored when played cards have five cards of
+    /// the same [`super::card::Suit`] regardless of their [`Rank`].
+    ///
+    /// ## Examples
+    /// A♦, 3♦, 5♦, 8♦, 10♦
     #[strum(serialize = "Flush", props(chips = "30", multiplier = "4"))]
     Flush,
+    /// [`ScoringHand::Straight`] is scored when played cards have five cards
+    /// that form a sequence of consecutive [`Rank`] regardless of their
+    /// [`super::card::Suit`].
+    ///
+    /// ## Examples
+    /// 4♣, 6♥, 5♦, 3♣, 7♦
     #[strum(serialize = "Straight", props(chips = "30", multiplier = "3"))]
     Straight,
     #[strum(serialize = "Three of a Kind", props(chips = "20", multiplier = "2"))]
+    /// [`ScoringHand::ThreeOfAKind`] is scored when played cards have three
+    /// cards that have the same [`Rank`]. Rest of the cards are not scored.
+    ///
+    /// ## Examples
+    /// K♥, 6♣, 6♦, 6♥, 10♥
     ThreeOfAKind,
     #[strum(serialize = "Two Pair", props(chips = "20", multiplier = "2"))]
+    /// [`ScoringHand::TwoPair`] is scored when played cards have two cards of
+    /// the same [`Rank`] and another two of the same [`Rank`]. Remaining card
+    /// isn't scored.
+    ///
+    /// ## Examples
+    /// 9♣, 9♥, 5♦, J♣, J♦
     TwoPair,
+    /// [`ScoringHand::Pair`] is scored when played cards have two cards of the
+    /// same [`Rank`]. Remaining cards are not scored.
+    ///
+    /// ## Examples
+    /// 6♣, 6♥, 5♦, 8♣, K♦
     #[strum(serialize = "Pair", props(chips = "10", multiplier = "2"))]
     Pair,
+    /// [`ScoringHand::HighCard`] is scored when played cards does not satisfy
+    /// any other scoring criteria. Only the card with highest [`Rank`] is
+    /// scored. In this case, [`Rank::Ace`] is always scored as a high ace.
+    ///
+    /// ## Examples
+    /// 2♥, 8♣, 7♦, K♥, 4♥
     #[strum(serialize = "High Card", props(chips = "5", multiplier = "1"))]
     HighCard,
 }
 
-#[derive(Clone)]
-pub struct StraightTestResult {
-    pub has_ace: bool,
-    pub scored_ranks: Vec<Rank>,
+/// Holds information regarding testing for a straight in the played hand.
+#[derive(Clone, Debug)]
+struct StraightTestReport {
+    /// A optional boolean that can indicate the following:
+    /// - [`None`]: No ace was counted in the the straight scoring.
+    /// - [`Some(false)`]: Ace was counted in the the straight scoring and was a
+    ///   low ace, ie, straight was made from ranks `5, 4, 3, 2, A`
+    /// - [`Some(true)`]: Ace was counted in the the straight scoring and was a
+    ///   high ace, ie, straight was made from ranks `A, K, Q, J, 10`
     pub high_ace: Option<bool>,
+    /// Collection of scored ranks.
+    pub scored_ranks: Vec<Rank>,
 }
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, Hash, PartialEq)]
+/// Container for static scoring methods.
+///
+/// [`Scorer::score_cards`] is a wrapper that handles scoring for cards. It
+/// should satisfy most requirements.
+#[derive(Clone, Copy, Debug, Ord, PartialOrd, Eq, Hash, PartialEq)]
 pub struct Scorer;
 
 impl Scorer {
+    /// Returns chips and multiplier for a [`ScoringHand`].
     #[inline]
-    pub fn get_chips_and_multiplier(
-        scoring_hand: ScoringHand,
-    ) -> Result<(usize, usize), Box<dyn Error>> {
+    pub fn get_chips_and_multiplier(scoring_hand: ScoringHand) -> Result<(usize, usize)> {
         Ok((
-            scoring_hand.get_int("chips").unwrap(),
-            scoring_hand.get_int("multiplier").unwrap(),
+            str::parse(scoring_hand.get_str("chips").ok_or_eyre(format!(
+                "Chips could not be fetched for scoring hand: {scoring_hand}."
+            ))?)?,
+            str::parse(scoring_hand.get_str("multiplier").ok_or_eyre(format!(
+                "Multiplier could not be fetched for scoring hand: {scoring_hand}."
+            ))?)?,
         ))
     }
 
-    fn test_straight(cards: &Vec<Card>) -> Option<StraightTestResult> {
+    /// Tests for a straight in a slice of [`Card`] and returns a
+    /// [`StraightTestReport`]
+    fn test_straight(cards: &[Card]) -> Option<StraightTestReport> {
         let has_ace = cards.iter().any(|card| card.rank == Rank::Ace);
         let mut ranks_without_ace = cards
             .iter()
             .map(|card| card.rank)
             .filter(|rank| rank != &Rank::Ace)
             .collect::<Vec<_>>();
+
+        #[expect(
+            clippy::arithmetic_side_effects,
+            reason = "False positive: Rank implements safe subtraction."
+        )]
         let comparator = ranks_without_ace
             .iter()
-            .map(|rank| ranks_without_ace[0] - *rank)
-            .collect::<Vec<_>>();
+            .map(|&rank| {
+                ranks_without_ace
+                    .first()
+                    .map(|&first_rank| first_rank - rank)
+            })
+            .collect::<Option<Vec<_>>>()?;
 
         if comparator.len() < 4 {
             return None;
         }
 
+        // TODO: Convert to bitwise scoring that will hold true for more than five
+        // cards.
         if comparator.eq(&[0, 1, 2, 3, 4]) {
-            return Some(StraightTestResult {
-                has_ace,
+            return Some(StraightTestReport {
                 high_ace: None,
                 scored_ranks: ranks_without_ace,
             });
@@ -90,8 +239,7 @@ impl Scorer {
 
         if is_low_straight {
             ranks_without_ace.push(Rank::Ace);
-            return Some(StraightTestResult {
-                has_ace,
+            return Some(StraightTestReport {
                 high_ace: Some(false),
                 scored_ranks: ranks_without_ace,
             });
@@ -99,8 +247,7 @@ impl Scorer {
 
         if is_high_straight {
             ranks_without_ace.insert(0, Rank::Ace);
-            return Some(StraightTestResult {
-                has_ace,
+            return Some(StraightTestReport {
                 high_ace: Some(true),
                 scored_ranks: ranks_without_ace,
             });
@@ -109,7 +256,12 @@ impl Scorer {
         None
     }
 
-    pub fn get_scoring_hand(cards: &Vec<Card>) -> Result<(ScoringHand, Vec<Rank>), Box<dyn Error>> {
+    /// Returns [`ScoringHand`] for played cards.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "Refactor: Current implementation guarantees index accesses are safe, but this can be refactored."
+    )]
+    pub fn get_scoring_hand(cards: &[Card]) -> Result<(ScoringHand, Vec<Rank>)> {
         let sorted_cards = cards.sorted_by_rank();
         let suit_groups = sorted_cards.grouped_by_suit();
         let rank_groups = sorted_cards.grouped_by_rank();
@@ -120,10 +272,10 @@ impl Scorer {
         }
 
         if suit_groups[0].1 == 5 && rank_groups[0].1 == 5 {
-            return Ok((
-                ScoringHand::FlushFive,
-                vec![rank_groups[0].0; rank_groups[0].1],
-            ));
+            return Ok((ScoringHand::FlushFive, vec![
+                rank_groups[0].0;
+                rank_groups[0].1
+            ]));
         }
 
         if rank_groups.len() >= 2
@@ -138,28 +290,27 @@ impl Scorer {
         }
 
         if rank_groups[0].1 == 5 {
-            return Ok((
-                ScoringHand::FiveOfAKind,
-                vec![rank_groups[0].0; rank_groups[0].1],
-            ));
+            return Ok((ScoringHand::FiveOfAKind, vec![
+                rank_groups[0].0;
+                rank_groups[0].1
+            ]));
         }
 
-        if suit_groups[0].1 == 5 && straight_test_result.as_ref().is_some_and(|result| result.has_ace) {
-            return Ok((ScoringHand::RoyalFlush, straight_test_result.unwrap().scored_ranks));
-        }
+        if suit_groups[0].1 == 5 {
+            if let Some(result) = straight_test_result {
+                if result.high_ace.unwrap_or(false) {
+                    return Ok((ScoringHand::RoyalFlush, result.scored_ranks));
+                }
 
-        if suit_groups[0].1 == 5 && straight_test_result.as_ref().is_some() {
-            return Ok((
-                ScoringHand::StraightFlush,
-                straight_test_result.unwrap().scored_ranks,
-            ));
+                return Ok((ScoringHand::StraightFlush, result.scored_ranks));
+            }
         }
 
         if rank_groups[0].1 == 4 {
-            return Ok((
-                ScoringHand::FourOfAKind,
-                vec![rank_groups[0].0; rank_groups[0].1],
-            ));
+            return Ok((ScoringHand::FourOfAKind, vec![
+                rank_groups[0].0;
+                rank_groups[0].1
+            ]));
         }
 
         if rank_groups.len() >= 2 && rank_groups[0].1 == 3 && rank_groups[1].1 == 2 {
@@ -176,15 +327,15 @@ impl Scorer {
             ));
         }
 
-        if straight_test_result.as_ref().is_some() {
-            return Ok((ScoringHand::Straight, straight_test_result.unwrap().scored_ranks));
+        if let Some(result) = straight_test_result {
+            return Ok((ScoringHand::Straight, result.scored_ranks));
         }
 
         if rank_groups[0].1 == 3 {
-            return Ok((
-                ScoringHand::ThreeOfAKind,
-                vec![rank_groups[0].0; rank_groups[0].1],
-            ));
+            return Ok((ScoringHand::ThreeOfAKind, vec![
+                rank_groups[0].0;
+                rank_groups[0].1
+            ]));
         }
 
         if rank_groups.len() >= 2 && rank_groups[0].1 == 2 && rank_groups[1].1 == 2 {
@@ -198,22 +349,34 @@ impl Scorer {
             return Ok((ScoringHand::Pair, vec![rank_groups[0].0; rank_groups[0].1]));
         }
 
-        Ok((
-            ScoringHand::HighCard,
-            vec![rank_groups[0].0; rank_groups[0].1],
-        ))
+        Ok((ScoringHand::HighCard, vec![
+            rank_groups[0].0;
+            rank_groups[0].1
+        ]))
     }
 
-    pub fn score_cards(cards: &Vec<Card>) -> Result<usize, Box<dyn Error>> {
-        let (scoring_hand, scored_ranks) = Self::get_scoring_hand(&cards)?;
+    /// Score played cards and return the computed score.
+    pub fn score_cards(cards: &[Card]) -> Result<usize> {
+        let (scoring_hand, scored_ranks) = Self::get_scoring_hand(cards)?;
         let (base_chips, multiplier) = Self::get_chips_and_multiplier(scoring_hand)?;
         let chips_increment = Self::score_chips_from_ranks(&scored_ranks)?;
-        Ok((base_chips + chips_increment) * multiplier)
+        (base_chips
+            .checked_add(chips_increment)
+            .ok_or_eyre("Add operation overflowed")?)
+        .checked_mul(multiplier)
+        .ok_or_eyre("Multiplication operation overflowed")
     }
 
+    /// Return total score from [`Rank`] from cards.
     #[inline]
-    pub fn score_chips_from_ranks(ranks: &Vec<Rank>) -> Result<usize, Box<dyn Error>> {
-        Ok(ranks.iter().fold(0, |acc, rank| acc + rank.get_score()))
+    fn score_chips_from_ranks(ranks: &[Rank]) -> Result<usize> {
+        ranks.iter().try_fold(0, |acc, rank| {
+            rank.get_score().map(|score| {
+                score
+                    .checked_add(acc)
+                    .ok_or_eyre("Add operation overflowed")
+            })?
+        })
     }
 }
 
@@ -221,13 +384,12 @@ impl Scorer {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::card::Suit;
-
     use super::*;
+    use crate::core::card::Suit;
 
     #[test]
     fn score_flush_five() {
-        let test_cards = vec![
+        let test_cards = [
             Card {
                 rank: Rank::Ten,
                 suit: Suit::Club,

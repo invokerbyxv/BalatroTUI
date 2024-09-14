@@ -1,21 +1,76 @@
-use ratatui::{buffer::Buffer, layout::{Alignment, Constraint, Flex, Layout, Margin, Rect}, text::Line, widgets::{block::Title, Block, BorderType, Widget}};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Flex, Layout, Margin, Rect},
+    text::Line,
+    widgets::{block::Title, Block, BorderType, Widget},
+};
 
-#[derive(Debug, Default, Clone)]
-pub struct TextBoxWidget<'a> {
-    border_block: Option<Block<'a>>,
+/// [`Widget`] to render vertically and horizontally centered text.
+///
+/// Widget construction uses builder pattern which can be started using the
+/// [`Self::new()`] method.
+///
+/// ```
+/// let area = Rect::new(0, 0, 100, 100);
+/// let mut buffer = Buffer::empty(area);
+/// let line: Vec<Text> = ["Some text".into(), "Some other text".into()];
+/// TextBoxWidget::new(line).render(area, buffer);
+/// ```
+///
+/// Additionally border and title can be specified to set style for text box.
+/// Constraints and flex can also be specified to modify layout alignment for
+/// content.
+///
+/// ```
+/// # let area = Rect::new(0, 0, 100, 100);
+/// # let mut buffer = Buffer::empty(area);
+/// # let line: Vec<Text> = ["Some text".into(), "Some other text".into()];
+/// TextBoxWidget::new(line)
+///     .border_block(Block::bordered().border_type(BorderType::Rounded))
+///     .title("Title")
+///     .constraints([Constraint::Length(1), Constraint::Length(1)])
+///     .flex(Flex::SpaceAround)
+///     .render(area, buffer);
+/// ```
+///
+/// [`TextBoxWidget`] also provides [`Self::bordered()`] utility method as a
+/// shorthand to create bordered text boxes.
+///
+/// ```
+/// # let area = Rect::new(0, 0, 100, 100);
+/// # let mut buffer = Buffer::empty(area);
+/// # let line: Vec<Text> = vec!["Some text".into(), "Some other text".into()];
+/// TextBoxWidget::bordered(line)
+///     .title("Title")
+///     .constraints([Constraint::Length(1), Constraint::Length(1)])
+///     .flex(Flex::SpaceAround)
+///     .render(area, buffer);
+/// ```
+#[derive(Clone, Debug, Default)]
+pub struct TextBoxWidget<'widget> {
+    /// Optional [`Block`] widget that surrounds the content.
+    border_block: Option<Block<'widget>>,
+    /// Overridable constraints for aligning content.
     constraints: Option<Vec<Constraint>>,
-    content: Vec<Line<'a>>,
+    /// Text content to be displayed.
+    content: Vec<Line<'widget>>,
+    /// Overridable [`Flex`] layout.
     flex: Flex,
-    title: Option<Title<'a>>,
+    /// Optional title to be displayed on the border. If
+    /// [`TextBoxWidget::border_block`] property is not set, this property will
+    /// be ignored.
+    title: Option<Title<'widget>>,
 }
 
-impl<'a> TextBoxWidget<'a> {
+impl<'widget> TextBoxWidget<'widget> {
+    /// Create new instance of [`TextBoxWidget`].
+    #[must_use = "Created text box widget instance must be used."]
     #[inline]
     pub fn new<C>(content: C) -> Self
     where
         C: IntoIterator,
-        C::Item: Into<Line<'a>> + Widget,
-        Vec<Line<'a>>: From<C>,
+        C::Item: Into<Line<'widget>> + Widget,
+        Vec<Line<'widget>>: From<C>,
     {
         TextBoxWidget {
             border_block: None,
@@ -26,24 +81,34 @@ impl<'a> TextBoxWidget<'a> {
         }
     }
 
+    /// Create a bordered instance of [`RoundScoreWidget`]. By default the
+    /// borders are rounded. The style can be overridden using
+    /// [`Self::border_block()`] method.
+    #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn bordered<C>(content: C) -> Self
     where
         C: IntoIterator,
-        C::Item: Into<Line<'a>> + Widget,
-        Vec<Line<'a>>: From<C>,
+        C::Item: Into<Line<'widget>> + Widget,
+        Vec<Line<'widget>>: From<C>,
     {
         let mut text_box = Self::new(content);
         text_box.border_block = Some(Block::bordered().border_type(BorderType::Rounded));
         text_box
     }
 
+    /// Update the `border_block` with a new [`Block`] and return the [`Self`]
+    /// instance.
+    #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
-    pub fn border_block(mut self, border_block: Block<'a>) -> Self {
+    pub fn border_block(mut self, border_block: Block<'widget>) -> Self {
         self.border_block = Some(border_block);
         self
     }
 
+    /// Update the layout constraints to be used to align content and return the
+    /// [`Self`] instance.
+    #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn constraints<I>(mut self, constraints: I) -> Self
     where
@@ -55,27 +120,35 @@ impl<'a> TextBoxWidget<'a> {
         self
     }
 
+    /// Update the content of the text box and return the [`Self`] instance.
+    #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn content<C>(mut self, content: C) -> Self
     where
         C: IntoIterator,
-        C::Item: Into<Line<'a>> + Widget,
-        Vec<Line<'a>>: From<C>,
+        C::Item: Into<Line<'widget>> + Widget,
+        Vec<Line<'widget>>: From<C>,
     {
         self.content = content.into();
         self
     }
 
+    /// Update the layout flex justify content and return the [`Self`] instance.
+    #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
-    pub fn flex(mut self, flex: Flex) -> Self {
+    pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self
     }
 
+    /// Update the title of the block for the text box and return the [`Self`]
+    /// instance. If a `border_block` is not set, this property is ignored when
+    /// rendering.
+    #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn title<T>(mut self, title: T) -> Self
     where
-        T: Into<Title<'a>>,
+        T: Into<Title<'widget>>,
     {
         self.title = Some(title.into());
         self
@@ -83,29 +156,33 @@ impl<'a> TextBoxWidget<'a> {
 }
 
 // TODO: Re-implement using ratatui-image.
+// TODO: Remove needless clone calls.
 
-impl<'a> Widget for TextBoxWidget<'a> {
+impl Widget for TextBoxWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut inner_area = area;
-
-        if self.border_block.is_some() {
-            let mut border_block = self.border_block.unwrap();
-
-            if self.title.is_some() {
-                border_block = border_block.title(self.title.unwrap().alignment(Alignment::Center));
+        let inner_area = if let Some(mut border_block) = self.border_block {
+            if let Some(title) = self.title {
+                border_block = border_block.title(title.alignment(Alignment::Center));
             }
 
             border_block.render(area, buf);
-            inner_area = area.inner(Margin::new(1, 1));
-        }
+            area.inner(Margin::new(1, 1))
+        } else {
+            area
+        };
 
-        let areas = Layout::vertical(
-            self.constraints.unwrap_or(
-                vec![Constraint::Length(1); self.content.clone().into_iter().len()]
-            )
-        ).flex(self.flex).split(inner_area);
-        for (idx, line) in self.content.clone().into_iter().enumerate() {
-            line.render(areas[idx], buf);
-        }
+        let text_areas = Layout::vertical(
+            self.constraints
+                .unwrap_or_else(|| vec![Constraint::Length(1); self.content.iter().len()]),
+        )
+        .flex(self.flex)
+        .split(inner_area);
+
+        self.content
+            .iter()
+            .zip(text_areas.iter())
+            .for_each(|(line, text_area)| {
+                line.render(*text_area, buf);
+            });
     }
 }
