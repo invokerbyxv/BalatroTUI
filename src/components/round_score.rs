@@ -6,13 +6,12 @@ use ratatui::{
     widgets::{StatefulWidget, Widget},
 };
 
-use super::text_box::TextBoxWidget;
-use crate::{core::round::Round, tui::get_line_with_chips};
+use super::{text_box::TextBoxWidget, utility::get_line_with_chips};
 
 /// Content height for [`RoundScoreWidget`]
 pub const ROUND_SCORE_CONTENT_HEIGHT: u16 = 5;
 
-/// [`Widget`] to show current score in the running [`Round`].
+/// [`Widget`] to show current score in the running round.
 ///
 /// Widget construction uses builder pattern which can be started using the
 /// [`Self::new()`] method.
@@ -20,9 +19,9 @@ pub const ROUND_SCORE_CONTENT_HEIGHT: u16 = 5;
 /// ```
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
-/// let round = Round::default();
+/// let mut score = 2000;
 ///
-/// RoundScoreWidget::new().render(area, buffer, round)
+/// RoundScoreWidget::new().render(area, buffer, &mut score);
 /// ```
 #[derive(Clone, Copy, Debug, Default)]
 pub struct RoundScoreWidget;
@@ -37,7 +36,7 @@ impl RoundScoreWidget {
 }
 
 impl StatefulWidget for RoundScoreWidget {
-    type State = Round;
+    type State = usize;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Prepare widgets
@@ -55,9 +54,7 @@ impl StatefulWidget for RoundScoreWidget {
 
         // Render widgets
         TextBoxWidget::new(round_score_content).render(round_score_text_area, buf);
-        TextBoxWidget::bordered([
-            get_line_with_chips(state.score.to_string(), Color::Red).centered()
-        ])
-        .render(round_score_value_area, buf);
+        TextBoxWidget::bordered([get_line_with_chips(state.to_string(), Color::Red).centered()])
+            .render(round_score_value_area, buf);
     }
 }

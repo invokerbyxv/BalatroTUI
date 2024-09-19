@@ -16,23 +16,15 @@ use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::CrosstermBackend as Backend,
-    layout::Rect,
-    style::{Color, Style, Styled},
-    text::{Line, Span},
-    Frame, Terminal,
-};
+use ratatui::{backend::CrosstermBackend as Backend, Terminal};
 use tracing::error;
-
-use crate::event::Event;
 
 /// [`Tui`] is a thin wrapper over [`ratatui`] with [`crossterm`] backend
 /// providing methods to handle terminal based operations.
 #[derive(Debug)]
 pub struct Tui {
     /// Crossterm backend terminal instance.
-    pub terminal: Terminal<Backend<Stderr>>,
+    pub(self) terminal: Terminal<Backend<Stderr>>,
 }
 
 // TODO: Use wrap_err wherever context needs to be added
@@ -112,35 +104,9 @@ impl Drop for Tui {
     }
 }
 
-/// Trait to implement screen drawing and event handling methods.
-#[deprecated(note = "Consider using widgets instead. This trait will be slowly phased out.")]
-pub trait TuiComponent {
-    /// Draws widgets and content on the screen `frame`, constrained within a
-    /// `rect`.
-    fn draw(&mut self, frame: &mut Frame<'_>, rect: Rect) -> Result<()>;
-    /// Handle Tui captured events for the component.
-    fn handle_events(&mut self, _event: Event) -> Result<()> {
-        Ok(())
-    }
-}
-
-// TODO: Move to a utility module
-/// Returns line widget with chip icon prepended
-pub fn get_line_with_chips<'widget, T: Into<Span<'widget>>>(
-    content: T,
-    color: Color,
-) -> Line<'widget> {
-    Line::from(vec![
-        // TODO: Consider using BigText here
-        "\u{26c0}".set_style(Style::new().fg(color)),
-        "  ".into(),
-        content.into(),
-    ])
-}
-
 /// Installs custom panic hook to work with `color_eyre`, `human_panic` and
 /// `better_panic`.
-fn init_panic_hook() -> Result<()> {
+pub(self) fn init_panic_hook() -> Result<()> {
     // TODO: Use this reporting text with color_eyre as well
     let (panic_hook, eyre_hook) = HookBuilder::default()
         .panic_section(format!(

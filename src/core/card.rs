@@ -42,7 +42,7 @@ use unicode_segmentation::UnicodeSegmentation;
 /// assert_eq!(parsed_suits, expected_suits);
 /// ```
 ///
-/// Suit provides [`Self::iter()`] method that can be used to create an iterator
+/// Suit provides [`Suit::iter()`] method that can be used to create an iterator
 /// over suit values.
 ///
 /// ```

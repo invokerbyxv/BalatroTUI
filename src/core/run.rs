@@ -7,18 +7,8 @@ use std::sync::{Arc, RwLock};
 
 use color_eyre::Result;
 use rand::distributions::{Alphanumeric, DistString};
-use ratatui::{
-    layout::{Constraint, Flex, Layout, Margin, Rect},
-    widgets::{Block, BorderType, Borders},
-    Frame,
-};
 
 use super::{deck::Deck, round::Round};
-use crate::{
-    components::{RoundInfoWidget, RoundScoreWidget, RunStatsWidget, ScorerPreviewWidget},
-    event::Event,
-    tui::TuiComponent,
-};
 
 /// Persistent details about the run.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -80,72 +70,3 @@ impl Run {
 }
 
 // TODO: Split/Flex all widgets in meta_area evenly.
-
-// TODO: Move into component chunks and un-implement TuiComponent for Run.
-impl TuiComponent for Run {
-    fn draw(&mut self, frame: &mut Frame<'_>, rect: Rect) -> Result<()> {
-        // Prepare areas
-        let [meta_area, play_area] =
-            Layout::horizontal([Constraint::Percentage(25), Constraint::Fill(1)]).areas(rect);
-        let [
-            round_info_area,
-            round_score_area,
-            scoring_area,
-            run_stats_area,
-        ] = Layout::vertical([
-            // TODO: Infer from content length
-            Constraint::Length(15),
-            Constraint::Length(9),
-            Constraint::Length(12),
-            Constraint::Length(17),
-        ])
-        .flex(Flex::Center)
-        .areas(meta_area.inner(Margin::new(1, 0)));
-
-        // Render containers
-        frame.render_widget(
-            Block::new().borders(Borders::LEFT | Borders::RIGHT),
-            meta_area,
-        );
-        frame.render_widget(
-            Block::bordered().border_type(BorderType::Rounded),
-            round_info_area,
-        );
-        frame.render_widget(
-            Block::bordered().border_type(BorderType::Rounded),
-            round_score_area,
-        );
-        frame.render_widget(
-            Block::bordered().border_type(BorderType::Rounded),
-            scoring_area,
-        );
-
-        // Render widgets
-        frame.render_stateful_widget(
-            RoundInfoWidget::new(),
-            round_info_area.inner(Margin::new(1, 1)),
-            &mut self.round,
-        );
-        frame.render_stateful_widget(
-            RoundScoreWidget::new(),
-            round_score_area.inner(Margin::new(1, 1)),
-            &mut self.round,
-        );
-        frame.render_stateful_widget(
-            ScorerPreviewWidget::new(),
-            scoring_area.inner(Margin::new(1, 1)),
-            &mut self.round.hand.peek_selected()?,
-        );
-        frame.render_stateful_widget(RunStatsWidget::new(), run_stats_area, self);
-
-        self.round.draw(frame, play_area)?;
-
-        Ok(())
-    }
-
-    fn handle_events(&mut self, event: Event) -> Result<()> {
-        self.round.handle_events(event)?;
-
-        Ok(())
-    }
-}

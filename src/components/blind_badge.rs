@@ -1,18 +1,16 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::Stylize,
+    style::{Color, Stylize},
     symbols::Marker,
     text::Line,
     widgets::{
         canvas::{Canvas, Circle},
-        StatefulWidget, Widget,
+        Widget,
     },
 };
 
-use crate::core::blind::Blind;
-
-/// [`Widget`] for depicting [`Blind`] with text inside.
+/// [`Widget`] for depicting [`crate::core::blind::Blind`] with text inside.
 ///
 /// Widget construction uses builder pattern which can be started using the
 /// [`Self::new()`] method.
@@ -20,29 +18,58 @@ use crate::core::blind::Blind;
 /// ```
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
-/// let blind = Blind::Small;
 ///
-/// BlindBadgeWidget::new().render(area, buffer, blind)
+/// BlindBadgeWidget::new()
+///     .color(Color::Green)
+///     .content(Line::from("Small Blind"))
+///     .render(area, buffer);
 /// ```
-#[derive(Clone, Copy, Debug, Default)]
-pub struct BlindBadgeWidget;
+#[derive(Clone, Debug, Default)]
+pub struct BlindBadgeWidget {
+    content: String,
+    color: Color,
+}
 
 impl BlindBadgeWidget {
     /// Create new instance of [`BlindBadgeWidget`].
     #[must_use = "Created blind badge widget instance must be used."]
     #[inline]
     pub const fn new() -> Self {
-        Self {}
+        Self {
+            color: Color::White,
+            content: String::new(),
+        }
+    }
+
+    /// Update the color to be used for chip icon and return the
+    /// [`BlindBadgeWidget`] instance.
+    #[must_use = "Blind badge widget builder returned instance must be used."]
+    #[inline]
+    pub const fn color(mut self, color: Color) -> Self {
+        self.color = color;
+        self
+    }
+
+    /// Update the content to be displayed next to chip icon and return the
+    /// [`BlindBadgeWidget`] instance.
+    #[must_use = "Blind badge widget builder returned instance must be used."]
+    #[inline]
+    pub fn content<C>(mut self, content: C) -> Self
+    where
+        String: From<C>,
+    {
+        self.content = content.into();
+        self
     }
 }
 
-impl StatefulWidget for BlindBadgeWidget {
-    type State = Blind;
-
+impl Widget for BlindBadgeWidget {
     // TODO: Use image instead of canvas
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        // Prepare variables
         let bound = f64::from(area.height);
 
+        // Render widgets
         let canvas = Canvas::default()
             .marker(Marker::Braille)
             .paint(|ctx| {
@@ -50,15 +77,11 @@ impl StatefulWidget for BlindBadgeWidget {
                     x: 0.0,
                     y: 0.0,
                     radius: bound,
-                    color: state.get_color().unwrap(),
+                    color: self.color,
                 });
 
-                let text = match *state {
-                    Blind::Small | Blind::Big => state.to_string(),
-                    Blind::Boss(boss) => boss.to_string(),
-                };
-
-                text.split_whitespace()
+                self.content
+                    .split_whitespace()
                     .map(String::from)
                     .map(|text_chunk| Line::from(text_chunk).centered().yellow())
                     .rev()

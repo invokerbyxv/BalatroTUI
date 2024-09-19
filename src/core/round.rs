@@ -2,7 +2,7 @@
 //!
 //! Once the [`Round::score`] crosses the target score of [`Round::blind`], the
 //! round is considered to be won and the reward from [`Round::blind`] is added
-//! to the enclosing [`Run::properties`]. If [`Round::hands_count`] reaches zero
+//! to the enclosing [`super::run::RunProperties`]. If [`Round::hands_count`] reaches zero
 //! and the [`Round::score`] does not cross the target score of
 //! [`Round::blind`], the round is considered as lost, returning the user to
 //! game over screen.
@@ -13,19 +13,13 @@ use color_eyre::{
     eyre::{bail, OptionExt},
     Result,
 };
-use crossterm::event::KeyCode;
-use ratatui::{
-    layout::{Constraint, Layout, Rect},
-    Frame,
-};
 
 use super::{
     blind::Blind,
     card::{Card, Sortable},
-    deck::{Deck, DeckExt, TrackableDeck},
+    deck::{Deck, DeckExt},
     scorer::Scorer,
 };
-use crate::{event::Event, tui::TuiComponent};
 
 /// Abstracts properties that remain persistent across played hands within a
 /// round.
@@ -73,7 +67,7 @@ pub struct Round {
     pub score: usize,
     // TODO: Remove pub access modifier wherever possible to constrict visibility
     /// An internal state for handling the hover and selection of cards in hand.
-    pub hand: TrackableDeck,
+    pub hand: Deck,
     /// A drainage for played cards; to be flushed into the main deck at the end
     /// of the round.
     pub history: Deck,
@@ -83,13 +77,12 @@ impl Round {
     /// Main entrypoint of the round. Once called, this method prepares the
     /// initial state of the round and initializes internal states.
     pub fn start(&mut self) -> Result<()> {
-        let deck = self
+        self.hand = self
             .deck
             .write()
             .or_else(|err| bail!("Could not attain write lock for deck to start round: {err}."))?
             .draw_random(self.properties.hand_size)?;
-        self.hand.cards.set_container(deck);
-        self.hand.cards.sort_by_rank();
+        self.hand.sort_by_rank();
 
         Ok(())
     }
@@ -103,15 +96,14 @@ impl Round {
             .or_else(|err| bail!("Could not attain write lock for deck to deal cards: {err}."))?
             .draw_random(last_cards.len())?;
         self.history.append(last_cards);
-        self.hand.cards.append(&mut new_cards);
-        self.hand.cards.update_cursor();
-        self.hand.cards.sort_by_rank();
+        self.hand.append(&mut new_cards);
+        self.hand.sort_by_rank();
 
         Ok(())
     }
 
     /// Plays the selected cards and scores the hand.
-    fn play_hand(&mut self) -> Result<()> {
+    pub fn play_hand(&mut self, played_cards: &mut Vec<Card>) -> Result<()> {
         if self.hands_count == 0 {
             bail!("Attempted to play hand with all hands exhausted.");
         }
@@ -121,21 +113,19 @@ impl Round {
             .checked_sub(1)
             .ok_or_eyre("Subtraction operation overflowed")?;
 
-        let mut played_cards = self.hand.draw_selected()?;
-
         self.score = self
             .score
-            .checked_add(Scorer::score_cards(&played_cards)?)
+            .checked_add(Scorer::score_cards(played_cards)?)
             .ok_or_eyre("Add operation overflowed")?;
 
-        self.deal_cards(&mut played_cards)?;
+        self.deal_cards(played_cards)?;
 
         Ok(())
     }
 
     /// Discards the selected cards and draws equal number of cards as the ones
     /// discarded.
-    fn discard_hand(&mut self) -> Result<()> {
+    pub fn discard_hand(&mut self, discarded_cards: &mut Vec<Card>) -> Result<()> {
         if self.discards_count == 0 {
             bail!("Attempted to discard hand with all discards exhausted.");
         }
@@ -145,9 +135,7 @@ impl Round {
             .checked_sub(1)
             .ok_or_eyre("Subtraction operation overflowed")?;
 
-        let mut discarded_cards = self.hand.draw_selected()?;
-
-        self.deal_cards(&mut discarded_cards)?;
+        self.deal_cards(discarded_cards)?;
 
         Ok(())
     }
@@ -156,39 +144,3 @@ impl Round {
 // TODO: Add a scorer animation area.
 // TODO: Remove deep variable access, use accessor functions/split
 // responsibilities.
-
-// TODO: Migrate all TuiComponent impl to Widgets
-impl TuiComponent for Round {
-    fn draw(&mut self, frame: &mut Frame<'_>, rect: Rect) -> Result<()> {
-        let [play_area, deck_area] =
-            Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(rect);
-        self.hand.draw(frame, deck_area)?;
-
-        Ok(())
-    }
-
-    fn handle_events(&mut self, event: Event) -> Result<()> {
-        #[expect(
-            clippy::wildcard_enum_match_arm,
-            reason = "Intended: Unused events may skip implementation as required."
-        )]
-        if let Event::Key(key_event) = event {
-            match key_event.code {
-                KeyCode::Enter => {
-                    if self.hands_count != 0 {
-                        self.play_hand()?;
-                    }
-                }
-                KeyCode::Char('x') => {
-                    if self.discards_count != 0 {
-                        self.discard_hand()?;
-                    }
-                }
-                _ => (),
-            }
-        }
-        self.hand.handle_events(event)?;
-
-        Ok(())
-    }
-}

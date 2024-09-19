@@ -112,7 +112,6 @@ dependencies = [
  "better-panic",
  "color-eyre",
  "crossterm",
- "cursorvec",
  "futures",
  "human-panic",
  "itertools",
@@ -270,12 +269,6 @@ checksum = "acdd7c62a3665c7f6830a51635d9ac9b23ed385797f70a83bb8bafe9c572ab2b"
 dependencies = [
  "winapi",
 ]
-
-[[package]]
-name = "cursorvec"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4cc6b63f3bf7883076f49a6a175255ceaa12305af4cb49d698a3a745e811c3f"
 
 [[package]]
 name = "either"

@@ -78,7 +78,7 @@ impl EventHandler {
                 clippy::pattern_type_mismatch,
                 clippy::ignored_unit_patterns,
                 clippy::integer_division_remainder_used,
-                reason = "False positive: Tokio's select! macro has different semantics than match statements"
+                reason = "False positive: Tokio's select! macro has different semantics than match statements."
             )]
             loop {
                 let tick_delay = tick.tick();

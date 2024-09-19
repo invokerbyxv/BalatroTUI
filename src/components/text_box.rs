@@ -81,7 +81,7 @@ impl<'widget> TextBoxWidget<'widget> {
         }
     }
 
-    /// Create a bordered instance of [`RoundScoreWidget`]. By default the
+    /// Create a bordered instance of [`TextBoxWidget`]. By default the
     /// borders are rounded. The style can be overridden using
     /// [`Self::border_block()`] method.
     #[must_use = "Text box widget builder returned instance must be used."]
@@ -97,8 +97,8 @@ impl<'widget> TextBoxWidget<'widget> {
         text_box
     }
 
-    /// Update the `border_block` with a new [`Block`] and return the [`Self`]
-    /// instance.
+    /// Update the [`Self::border_block`] with a new [`Block`] and return the
+    /// [`TextBoxWidget`] instance.
     #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn border_block(mut self, border_block: Block<'widget>) -> Self {
@@ -107,7 +107,7 @@ impl<'widget> TextBoxWidget<'widget> {
     }
 
     /// Update the layout constraints to be used to align content and return the
-    /// [`Self`] instance.
+    /// [`TextBoxWidget`] instance.
     #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn constraints<I>(mut self, constraints: I) -> Self
@@ -120,7 +120,8 @@ impl<'widget> TextBoxWidget<'widget> {
         self
     }
 
-    /// Update the content of the text box and return the [`Self`] instance.
+    /// Update the content of the text box and return the [`TextBoxWidget`]
+    /// instance.
     #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn content<C>(mut self, content: C) -> Self
@@ -133,7 +134,8 @@ impl<'widget> TextBoxWidget<'widget> {
         self
     }
 
-    /// Update the layout flex justify content and return the [`Self`] instance.
+    /// Update the layout flex justify content and return the [`TextBoxWidget`]
+    /// instance.
     #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub const fn flex(mut self, flex: Flex) -> Self {
@@ -141,9 +143,9 @@ impl<'widget> TextBoxWidget<'widget> {
         self
     }
 
-    /// Update the title of the block for the text box and return the [`Self`]
-    /// instance. If a `border_block` is not set, this property is ignored when
-    /// rendering.
+    /// Update the title of the block for the text box and return the
+    /// [`TextBoxWidget`] instance. If a [`Self::border_block`] is not set, this
+    /// property is ignored when rendering.
     #[must_use = "Text box widget builder returned instance must be used."]
     #[inline]
     pub fn title<T>(mut self, title: T) -> Self
