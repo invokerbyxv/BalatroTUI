@@ -35,7 +35,6 @@ use super::card::{Card, Rank, Sortable};
     Clone,
     Copy,
     Debug,
-    Default,
     Display,
     EnumCount,
     EnumIter,
@@ -49,13 +48,6 @@ use super::card::{Card, Rank, Sortable};
     PartialOrd,
 )]
 pub enum ScoringHand {
-    /// Default scoring hand, when no cards played in the hand. This scoring
-    /// hand should not be used directly as its an invalid scoring hand. This
-    /// only provides compatibility of default value before cards are actually
-    /// played.
-    #[default]
-    #[strum(serialize = "", props(chips = "0", multiplier = "0"))]
-    None = 0,
     /// [`ScoringHand::FlushFive`] is scored when played cards have five cards
     /// of the same [`Rank`] and same [`super::card::Suit`].
     ///
@@ -261,18 +253,18 @@ impl Scorer {
         clippy::indexing_slicing,
         reason = "Refactor: Current implementation guarantees index accesses are safe, but this can be refactored."
     )]
-    pub fn get_scoring_hand(cards: &[Card]) -> Result<(ScoringHand, Vec<Rank>)> {
+    pub fn get_scoring_hand(cards: &[Card]) -> Result<(Option<ScoringHand>, Vec<Rank>)> {
         let sorted_cards = cards.sorted_by_rank();
         let suit_groups = sorted_cards.grouped_by_suit();
         let rank_groups = sorted_cards.grouped_by_rank();
         let straight_test_result = Self::test_straight(&sorted_cards);
 
         if suit_groups.is_empty() || rank_groups.is_empty() {
-            return Ok((ScoringHand::None, vec![]));
+            return Ok((None, vec![]));
         }
 
         if suit_groups[0].1 == 5 && rank_groups[0].1 == 5 {
-            return Ok((ScoringHand::FlushFive, vec![
+            return Ok((Some(ScoringHand::FlushFive), vec![
                 rank_groups[0].0;
                 rank_groups[0].1
             ]));
@@ -286,11 +278,11 @@ impl Scorer {
             let mut played_ranks = vec![];
             played_ranks.append(&mut vec![rank_groups[0].0; rank_groups[0].1]);
             played_ranks.append(&mut vec![rank_groups[1].0; rank_groups[1].1]);
-            return Ok((ScoringHand::FlushHouse, played_ranks));
+            return Ok((Some(ScoringHand::FlushHouse), played_ranks));
         }
 
         if rank_groups[0].1 == 5 {
-            return Ok((ScoringHand::FiveOfAKind, vec![
+            return Ok((Some(ScoringHand::FiveOfAKind), vec![
                 rank_groups[0].0;
                 rank_groups[0].1
             ]));
@@ -299,15 +291,15 @@ impl Scorer {
         if suit_groups[0].1 == 5 {
             if let Some(result) = straight_test_result {
                 if result.high_ace.unwrap_or(false) {
-                    return Ok((ScoringHand::RoyalFlush, result.scored_ranks));
+                    return Ok((Some(ScoringHand::RoyalFlush), result.scored_ranks));
                 }
 
-                return Ok((ScoringHand::StraightFlush, result.scored_ranks));
+                return Ok((Some(ScoringHand::StraightFlush), result.scored_ranks));
             }
         }
 
         if rank_groups[0].1 == 4 {
-            return Ok((ScoringHand::FourOfAKind, vec![
+            return Ok((Some(ScoringHand::FourOfAKind), vec![
                 rank_groups[0].0;
                 rank_groups[0].1
             ]));
@@ -317,22 +309,22 @@ impl Scorer {
             let mut played_ranks = vec![];
             played_ranks.append(&mut vec![rank_groups[0].0; rank_groups[0].1]);
             played_ranks.append(&mut vec![rank_groups[1].0; rank_groups[1].1]);
-            return Ok((ScoringHand::FullHouse, played_ranks));
+            return Ok((Some(ScoringHand::FullHouse), played_ranks));
         }
 
         if suit_groups[0].1 == 5 {
             return Ok((
-                ScoringHand::Flush,
+                Some(ScoringHand::Flush),
                 cards.iter().map(|card| card.rank).collect(),
             ));
         }
 
         if let Some(result) = straight_test_result {
-            return Ok((ScoringHand::Straight, result.scored_ranks));
+            return Ok((Some(ScoringHand::Straight), result.scored_ranks));
         }
 
         if rank_groups[0].1 == 3 {
-            return Ok((ScoringHand::ThreeOfAKind, vec![
+            return Ok((Some(ScoringHand::ThreeOfAKind), vec![
                 rank_groups[0].0;
                 rank_groups[0].1
             ]));
@@ -342,14 +334,17 @@ impl Scorer {
             let mut played_ranks = vec![];
             played_ranks.append(&mut vec![rank_groups[0].0; rank_groups[0].1]);
             played_ranks.append(&mut vec![rank_groups[1].0; rank_groups[1].1]);
-            return Ok((ScoringHand::TwoPair, played_ranks));
+            return Ok((Some(ScoringHand::TwoPair), played_ranks));
         }
 
         if rank_groups[0].1 == 2 {
-            return Ok((ScoringHand::Pair, vec![rank_groups[0].0; rank_groups[0].1]));
+            return Ok((Some(ScoringHand::Pair), vec![
+                rank_groups[0].0;
+                rank_groups[0].1
+            ]));
         }
 
-        Ok((ScoringHand::HighCard, vec![
+        Ok((Some(ScoringHand::HighCard), vec![
             rank_groups[0].0;
             rank_groups[0].1
         ]))
@@ -358,7 +353,9 @@ impl Scorer {
     /// Score played cards and return the computed score.
     pub fn score_cards(cards: &[Card]) -> Result<usize> {
         let (scoring_hand, scored_ranks) = Self::get_scoring_hand(cards)?;
-        let (base_chips, multiplier) = Self::get_chips_and_multiplier(scoring_hand)?;
+        let (base_chips, multiplier) = Self::get_chips_and_multiplier(
+            scoring_hand.ok_or_eyre("Attempted to score with no cards.")?,
+        )?;
         let chips_increment = Self::score_chips_from_ranks(&scored_ranks)?;
         (base_chips
             .checked_add(chips_increment)
@@ -413,7 +410,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::FlushFive
         );
     }
@@ -444,7 +441,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::FlushHouse
         );
     }
@@ -475,7 +472,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::FiveOfAKind
         );
     }
@@ -506,7 +503,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::RoyalFlush
         );
     }
@@ -537,7 +534,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::StraightFlush
         );
     }
@@ -568,7 +565,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::FourOfAKind
         );
     }
@@ -599,7 +596,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::FullHouse
         );
     }
@@ -630,7 +627,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::Flush
         );
     }
@@ -661,7 +658,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::Straight
         );
     }
@@ -692,7 +689,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::Straight
         );
     }
@@ -723,7 +720,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::Straight
         );
     }
@@ -754,7 +751,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::HighCard
         );
     }
@@ -785,7 +782,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::ThreeOfAKind
         );
     }
@@ -816,7 +813,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::TwoPair
         );
     }
@@ -847,7 +844,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::Pair
         );
     }
@@ -878,7 +875,7 @@ mod tests {
         ];
 
         assert_eq!(
-            Scorer::get_scoring_hand(&test_cards).unwrap().0,
+            Scorer::get_scoring_hand(&test_cards).unwrap().0.unwrap(),
             ScoringHand::HighCard
         );
     }
