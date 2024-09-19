@@ -1,5 +1,6 @@
 use std::default::Default;
 
+use balatro_tui_core::card::Card;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Margin, Rect},
@@ -9,7 +10,6 @@ use ratatui::{
 };
 
 use super::text_box::TextBoxWidget;
-use crate::core::card::Card;
 
 /// Content width for [`CardWidget`].
 pub const CARD_CONTENT_WIDTH: u16 = 12;

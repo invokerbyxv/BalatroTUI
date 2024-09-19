@@ -1,0 +1,42 @@
+[package]
+name = "balatro_tui"
+description = "Balatro game clone in CLI"
+documentation = "https://docs.rs/balatro_tui/latest/balatro_tui/"
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license-file.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+# [lints.rust]
+# unused_extern_crates = "allow"  # Required for `human_panic`
+
+# [lints.clippy]
+# module_name_repetitions = "allow"
+# missing_errors_doc = "allow"
+# pub_use = "allow"
+
+[dependencies]
+balatro_tui_core = { path = "../balatro_tui_core" }
+balatro_tui_widgets = { path = "../balatro_tui_widgets" }
+better-panic = "0.3.0"
+color-eyre = "0.6.3"
+crossterm = { version = "0.28.1", default-features = false, features = ["event-stream"] }
+futures = "0.3.30"
+human-panic = "2.0.1"
+itertools = "0.13.0"
+libc = "0.2.158"
+ratatui = "0.28.1"
+tokio = { version = "1.40.0", features = ["full"] }
+tokio-util = "0.7.12"
+tracing = "0.1.40"
+strip-ansi-escapes = "0.2.0"
+
+[dev-dependencies]

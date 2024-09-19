@@ -19,7 +19,8 @@ pub struct ScorerPreviewWidgetState {
     pub level: usize,
     /// Multiplier for the scoring hand.
     pub multiplier: usize,
-    /// Text content representing the scoring hand. If [`None`], [`ScorerPreviewWidget`] does not display the scoring hand text.
+    /// Text content representing the scoring hand. If [`None`],
+    /// [`ScorerPreviewWidget`] does not display the scoring hand text.
     pub scoring_hand_text: Option<String>,
 }
 
@@ -76,7 +77,7 @@ impl StatefulWidget for ScorerPreviewWidget {
         .areas(scoring_area);
 
         // Render widgets
-        if let Some(hand) = &state.scoring_hand_text {
+        if let Some(hand) = state.scoring_hand_text.as_ref() {
             // TODO: Add leveling system for scoring hand types
             TextBoxWidget::new([Line::from(format!("{} [lvl. {}]", hand, state.level)).centered()])
                 .constraints([Constraint::Length(1)])

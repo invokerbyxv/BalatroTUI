@@ -1,0 +1,25 @@
+[package]
+name = "balatro_tui_widgets"
+description = "UI widgets for Balatro CLI game"
+documentation = "https://docs.rs/balatro_tui_widgets/latest/balatro_tui_widgets/"
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license-file.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+balatro_tui_core = { path = "../balatro_tui_core" }
+color-eyre = "0.6.3"    # Migrate to thiserror
+itertools = "0.13.0"
+ratatui = "0.28.1"
+thiserror = "1.0.63"
+
+[dev-dependencies]

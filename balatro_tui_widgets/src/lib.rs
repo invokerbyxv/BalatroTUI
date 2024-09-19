@@ -1,8 +1,6 @@
 //! Widgets and components for displaying elements of `BalatroTUI` on the
 //! terminal.
 
-// TODO: Move into a separate sub-crate.
-
 #![expect(
     clippy::missing_docs_in_private_items,
     reason = "Intended: This module's contents are re-exported."

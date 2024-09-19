@@ -52,9 +52,9 @@ pub struct EventHandler {
     receiver: UnboundedReceiver<Event>,
     /// Taking from handler marks the end of the [`EventHandler`]. It safely
     /// closes both sender and receiver objects.
-    handler: Option<JoinHandle<()>>,
+    handler: Option<JoinHandle<Result<()>>>,
     /// Signals cancellation from consumer to exit the [`EventHandler`].
-    stop_cancellation_token: CancellationToken,
+    cancellation_token: CancellationToken,
 }
 
 impl EventHandler {
@@ -65,61 +65,70 @@ impl EventHandler {
         let tick_duration = Duration::from_millis(tick_rate);
 
         let (sender, receiver) = unbounded_channel();
-        let local_sender = sender.clone();
 
-        let stop_cancellation_token = CancellationToken::new();
-        let local_stop_cancellation_token = stop_cancellation_token.clone();
+        let cancellation_token = CancellationToken::new();
 
-        let handler = spawn(async move {
-            let mut reader = EventStream::new();
-            let mut tick = interval(tick_duration);
-
-            #[expect(
-                clippy::pattern_type_mismatch,
-                clippy::ignored_unit_patterns,
-                clippy::integer_division_remainder_used,
-                reason = "False positive: Tokio's select! macro has different semantics than match statements."
-            )]
-            loop {
-                let tick_delay = tick.tick();
-                let crossterm_event = reader.next().fuse();
-                select! {
-                    _ = local_sender.closed() => {
-                        break;
-                    }
-                    _ = tick_delay => {
-                        local_sender.send(Event::Tick).wrap_err("Unable to send Tick event over sender channel.");
-                    }
-                    _ = local_stop_cancellation_token.cancelled() => {
-                        break;
-                    }
-                    Some(Ok(event)) = crossterm_event => {
-                        match event {
-                            CrosstermEvent::Key(key) => {
-                                if key.kind == KeyEventKind::Press {
-                                    local_sender.send(Event::Key(key)).wrap_err("Unable to send Key event over sender channel.");
-                                }
-                            },
-                            CrosstermEvent::Mouse(mouse) => {
-                                local_sender.send(Event::Mouse(mouse)).wrap_err("Unable to send Mouse event over sender channel.");
-                            },
-                            CrosstermEvent::Resize(x, y) => {
-                                local_sender.send(Event::Resize(x, y)).wrap_err("Unable to send Resize event over sender channel.");
-                            },
-                            CrosstermEvent::FocusLost
-                            | CrosstermEvent::FocusGained
-                            | CrosstermEvent::Paste(_) => { },
-                        }
-                    }
-                };
-            }
-        });
+        let handler = spawn(Self::event_handler_future(
+            tick_duration,
+            sender.clone(),
+            cancellation_token.clone(),
+        ));
 
         Self {
             sender,
             receiver,
             handler: Some(handler),
-            stop_cancellation_token,
+            cancellation_token,
+        }
+    }
+
+    /// Event handler future to be spawned as a tokio task.
+    async fn event_handler_future(
+        tick_duration: Duration,
+        sender: UnboundedSender<Event>,
+        cancellation_token: CancellationToken,
+    ) -> Result<()> {
+        let mut reader = EventStream::new();
+        let mut tick = interval(tick_duration);
+
+        #[expect(
+            clippy::pattern_type_mismatch,
+            clippy::ignored_unit_patterns,
+            clippy::integer_division_remainder_used,
+            reason = "False positive: Tokio's select! macro has different semantics than match statements."
+        )]
+        loop {
+            let tick_delay = tick.tick();
+            let crossterm_event = reader.next().fuse();
+            select! {
+                _ = sender.closed() => {
+                    break Ok(());
+                }
+                _ = tick_delay => {
+                    sender.send(Event::Tick).wrap_err("Unable to send Tick event over sender channel.")?;
+                }
+                _ = cancellation_token.cancelled() => {
+                    break Ok(());
+                }
+                Some(Ok(event)) = crossterm_event => {
+                    match event {
+                        CrosstermEvent::Key(key) => {
+                            if key.kind == KeyEventKind::Press {
+                                sender.send(Event::Key(key)).wrap_err("Unable to send Key event over sender channel.")?;
+                            }
+                        },
+                        CrosstermEvent::Mouse(mouse) => {
+                            sender.send(Event::Mouse(mouse)).wrap_err("Unable to send Mouse event over sender channel.")?;
+                        },
+                        CrosstermEvent::Resize(x, y) => {
+                            sender.send(Event::Resize(x, y)).wrap_err("Unable to send Resize event over sender channel.")?;
+                        },
+                        CrosstermEvent::FocusLost
+                        | CrosstermEvent::FocusGained
+                        | CrosstermEvent::Paste(_) => { },
+                    }
+                }
+            };
         }
     }
 
@@ -140,10 +149,13 @@ impl EventHandler {
     /// Halts the [`Event`] stream via a cancellation token and sends an
     /// [`Event::Exit`] event to gracefully exit the game loop.
     pub async fn stop(&mut self) -> Result<()> {
-        self.stop_cancellation_token.cancel();
+        self.cancellation_token.cancel();
         self.sender.send(Event::Exit)?;
         if let Some(handle) = self.handler.take() {
-            return handle.await.wrap_err("Cannot stop event handle.");
+            return handle
+                .await
+                .wrap_err("Cannot attain join on event listener task handle.")?
+                .wrap_err("An error occurred in the event handler future");
         }
         Ok(())
     }

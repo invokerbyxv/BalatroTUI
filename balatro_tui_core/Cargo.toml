@@ -1,0 +1,27 @@
+[package]
+name = "balatro_tui_core"
+description = "Core modules for Balatro CLI game"
+documentation = "https://docs.rs/balatro_tui_core/latest/balatro_tui_core/"
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license-file.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+color-eyre = "0.6.3"  # Migrate to thiserror
+itertools = "0.13.0"
+once_cell = "1.19.0"
+rand = "0.8.5"
+thiserror = "1.0.63"
+strum = { version = "0.26.3", features = ["derive"] }
+unicode-segmentation = "1.11.0"
+
+[dev-dependencies]

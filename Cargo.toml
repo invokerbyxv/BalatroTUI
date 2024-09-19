@@ -1,15 +1,10 @@
-[package]
-name = "balatro_tui"
-description = "Balatro game clone in CLI"
-version = "0.1.0"
-license-file = "LICENSE"
-readme = "README.md"
-authors = ["Utkarsh Bhardwaj (Passeriform) <passeriform.ub@gmail.com>"]
-keywords = ["game", "command-line", "cli", "cards"]
-categories = ["command-line-utilities", "config", "data-structures"]
-repository = "https://github.com/Passeriform/BalatroTUI"
-homepage = "https://www.passeriform.com/prod/BalatroTUI"
-edition = "2021"
+[workspace]
+resolver = "2"
+members = [
+  "balatro_tui",
+  "balatro_tui_core",
+  "balatro_tui_widgets",
+]
 exclude = [
   "HomebrewFormula",
   "/.github/",
@@ -19,12 +14,19 @@ exclude = [
   "/scripts/",
 ]
 
-[badges]
-is-it-maintained-issue-resolution = { repository = "https://github.com/Passeriform/BalatroTUI" }
-is-it-maintained-open-issues = { repository = "https://github.com/Passeriform/BalatroTUI" }
-maintenance = { status = "actively-developed" }
+[workspace.package]
+authors = ["Utkarsh Bhardwaj (Passeriform) <passeriform.ub@gmail.com>"]
+categories = ["command-line-utilities", "config", "data-structures"]
+edition = "2021"
+homepage = "https://www.passeriform.com/prod/BalatroTUI"
+keywords = ["game", "command-line", "cli", "cards"]
+license-file = "LICENSE"
+readme = "README.md"
+repository = "https://github.com/Passeriform/BalatroTUI"
+version = "0.1.0"
 
-[lints.rust]
+
+[workspace.lints.rust]
 warnings = { priority = -1, level = "warn" }
 deprecated-safe = { priority = -1, level = "warn" }
 future-incompatible = { priority = -1, level = "warn" }
@@ -59,17 +61,15 @@ unnameable_types = "warn"
 unreachable_pub = "warn"
 unsafe_code = "warn"
 unstable_features = "allow" # Allowed for nightly
-unused_crate_dependencies = "warn"
-unused_extern_crates = "allow"  # Required for `human_panic` switched on debug and release build
+unused_crate_dependencies = "allow" # Using cargo-udeps (https://github.com/rust-lang/rust/issues/95513)
+unused_extern_crates = "warn"
 unused_import_braces = "warn"
 unused_lifetimes = "warn"
 unused_qualifications = "warn"
 unused_results = "warn"
 variant_size_differences = "warn"
 
-# For evaluation (refactoring)
-
-[lints.clippy]
+[workspace.lints.clippy]
 all = { priority = -1, level = "warn" }
 cargo = { priority = -1, level = "warn" }
 complexity = { priority = -1, level = "warn" }
@@ -131,7 +131,6 @@ mem_forget = "warn"
 missing_assert_message = "warn"
 missing_asserts_for_indexing = "warn"
 missing_docs_in_private_items = "warn"
-missing_inline_in_public_items = "warn"
 missing_trait_methods = "allow"
 mixed_read_write_in_expression = "warn"
 mod_module_files = "allow"
@@ -153,6 +152,7 @@ pub_without_shorthand = "warn"
 rc_buffer = "warn"
 rc_mutex = "warn"
 redundant_type_annotations = "warn"
+redundant_pub_crate = "allow"
 ref_patterns = "warn"
 renamed_function_params = "warn"
 rest_pat_in_fully_bound_structs = "warn"
@@ -189,6 +189,7 @@ verbose_file_reads = "warn"
 wildcard_enum_match_arm = "warn"
 
 # Enable when refactoring
+missing_inline_in_public_items = "allow"
 as_conversions = "allow"
 min_ident_chars = "allow" # https://github.com/rust-lang/rust-clippy/issues/13396
 unwrap_used = "allow"
@@ -203,23 +204,3 @@ pub_use = "allow"
 # Enable if moving to no_std
 std_instead_of_core = "allow"
 std_instead_of_alloc = "allow"
-
-[dependencies]
-better-panic = "0.3.0"
-color-eyre = "0.6.3"
-crossterm = { version = "0.28.1", default-features = false, features = ["event-stream"] }
-futures = "0.3.30"
-human-panic = "2.0.1"
-itertools = "0.13.0"
-libc = "0.2.158"
-once_cell = "1.19.0"
-rand = "0.8.5"
-ratatui = "0.28.1"
-tokio = { version = "1.40.0", features = ["full"] }
-tokio-util = "0.7.12"
-tracing = "0.1.40"
-strip-ansi-escapes = "0.2.0"
-strum = { version = "0.26.3", features = ["derive"] }
-unicode-segmentation = "1.11.0"
-
-[dev-dependencies]

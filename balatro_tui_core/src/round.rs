@@ -2,8 +2,8 @@
 //!
 //! Once the [`Round::score`] crosses the target score of [`Round::blind`], the
 //! round is considered to be won and the reward from [`Round::blind`] is added
-//! to the enclosing [`super::run::RunProperties`]. If [`Round::hands_count`] reaches zero
-//! and the [`Round::score`] does not cross the target score of
+//! to the enclosing [`super::run::RunProperties`]. If [`Round::hands_count`]
+//! reaches zero and the [`Round::score`] does not cross the target score of
 //! [`Round::blind`], the round is considered as lost, returning the user to
 //! game over screen.
 

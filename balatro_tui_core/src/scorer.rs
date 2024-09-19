@@ -368,11 +368,10 @@ impl Scorer {
     #[inline]
     fn score_chips_from_ranks(ranks: &[Rank]) -> Result<usize> {
         ranks.iter().try_fold(0, |acc, rank| {
-            rank.get_score().map(|score| {
-                score
-                    .checked_add(acc)
-                    .ok_or_eyre("Add operation overflowed")
-            })?
+            let score = rank.get_score()?;
+            score
+                .checked_add(acc)
+                .ok_or_eyre("Add operation overflowed")
         })
     }
 }
@@ -382,7 +381,7 @@ impl Scorer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::card::Suit;
+    use crate::card::Suit;
 
     #[test]
     fn score_flush_five() {

@@ -4,13 +4,10 @@
 //! The [`Blind`] enum is the entrypoint, data carrier and defines property
 //! access methods.
 
-use std::str::FromStr;
-
 use color_eyre::{
     eyre::{bail, OptionExt},
     Result,
 };
-use ratatui::style::Color;
 use strum::{
     Display as EnumDisplay, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr,
     VariantArray,
@@ -160,7 +157,7 @@ impl Blind {
 
         let chips_multiplier: usize = 25;
 
-        let boss_blind_multiplier = if let Self::Boss(boss) = *self {
+        let boss_blind_multiplier = if let &Self::Boss(boss) = self {
             if boss == Bosses::Wall {
                 4
             } else if boss == Bosses::Needle {
@@ -192,10 +189,10 @@ impl Blind {
 
     /// Returns color used to represent the blind.
     #[inline]
-    pub fn get_color(&self) -> Result<Color> {
-        Ok(Color::from_str(self.get_str("color").ok_or_eyre(
-            format!("Could not find color property for Blind variant: {self}."),
-        )?)?)
+    pub fn get_color(&self) -> Result<&str> {
+        self.get_str("color").ok_or_eyre(format!(
+            "Could not find color property for Blind variant: {self}."
+        ))
     }
 
     /// Returns the reward obtained after defeating the blind.

@@ -13,7 +13,11 @@ use ratatui::{
 /// ```
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
-/// let line: Vec<Text> = ["Some text".into(), "Some other text".into()];
+/// let line: Vec<Text> = [
+///     "Some text".into(),
+///     "Some other text".into(),
+/// ];
+///
 /// TextBoxWidget::new(line).render(area, buffer);
 /// ```
 ///
@@ -22,9 +26,10 @@ use ratatui::{
 /// content.
 ///
 /// ```
-/// # let area = Rect::new(0, 0, 100, 100);
-/// # let mut buffer = Buffer::empty(area);
-/// # let line: Vec<Text> = ["Some text".into(), "Some other text".into()];
+/// let area = Rect::new(0, 0, 100, 100);
+/// let mut buffer = Buffer::empty(area);
+/// let line: Vec<Text> = ["Some text".into(), "Some other text".into()];
+///
 /// TextBoxWidget::new(line)
 ///     .border_block(Block::bordered().border_type(BorderType::Rounded))
 ///     .title("Title")
@@ -37,9 +42,10 @@ use ratatui::{
 /// shorthand to create bordered text boxes.
 ///
 /// ```
-/// # let area = Rect::new(0, 0, 100, 100);
-/// # let mut buffer = Buffer::empty(area);
-/// # let line: Vec<Text> = vec!["Some text".into(), "Some other text".into()];
+/// let area = Rect::new(0, 0, 100, 100);
+/// let mut buffer = Buffer::empty(area);
+/// let line: Vec<Text> = vec!["Some text".into(), "Some other text".into()];
+///
 /// TextBoxWidget::bordered(line)
 ///     .title("Title")
 ///     .constraints([Constraint::Length(1), Constraint::Length(1)])
@@ -183,8 +189,8 @@ impl Widget for TextBoxWidget<'_> {
         self.content
             .iter()
             .zip(text_areas.iter())
-            .for_each(|(line, text_area)| {
-                line.render(*text_area, buf);
+            .for_each(|(line, &text_area)| {
+                line.render(text_area, buf);
             });
     }
 }

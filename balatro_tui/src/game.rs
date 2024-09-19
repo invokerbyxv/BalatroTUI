@@ -7,9 +7,22 @@
 
 use std::{
     collections::HashSet,
+    str::FromStr,
     sync::{Arc, Mutex, RwLock},
 };
 
+use balatro_tui_core::{
+    blind::Blind,
+    card::Card,
+    deck::{Deck, DeckConstExt},
+    round::{Round, RoundProperties},
+    run::{Run, RunProperties},
+    scorer::Scorer,
+};
+use balatro_tui_widgets::{
+    CardListWidget, CardListWidgetState, RoundInfoWidget, RoundScoreWidget, RunStatsWidget,
+    RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState, SelectableList,
+};
 use color_eyre::{
     eyre::{bail, Context, OptionExt},
     Result,
@@ -18,23 +31,12 @@ use crossterm::event::{KeyCode, KeyModifiers};
 use itertools::{Either, Itertools};
 use ratatui::{
     layout::{Constraint, Flex, Layout, Margin, Rect},
+    style::Color,
     widgets::{Block, BorderType, Borders},
     Frame,
 };
 
 use crate::{
-    components::{
-        CardListWidget, CardListWidgetState, RoundInfoWidget, RoundScoreWidget, RunStatsWidget,
-        RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState, SelectableList,
-    },
-    core::{
-        blind::Blind,
-        card::Card,
-        deck::{Deck, DeckConstExt},
-        round::{Round, RoundProperties},
-        run::{Run, RunProperties},
-        scorer::Scorer,
-    },
     event::{Event, EventHandler},
     tui::Tui,
 };
@@ -82,7 +84,6 @@ impl Game {
     pub fn new() -> Self {
         let deck = Arc::new(RwLock::new(Deck::standard()));
         let run_properties = RunProperties::default();
-        let round_properties = RoundProperties::default();
         let max_hands = run_properties.max_hands;
         let max_discards = run_properties.max_discards;
         Self {
@@ -97,7 +98,7 @@ impl Game {
                     hand: vec![],
                     hands_count: max_hands,
                     history: vec![],
-                    properties: round_properties,
+                    properties: RoundProperties::default(),
                     score: 0,
                 },
                 upcoming_round_number: 1,
@@ -216,7 +217,7 @@ impl Game {
         // Render widgets
         frame.render_widget(
             RoundInfoWidget::new()
-                .blind_color(self.run.round.blind.get_color()?)
+                .blind_color(Color::from_str(self.run.round.blind.get_color()?)?)
                 .blind_text(self.run.round.blind.to_string())
                 .reward(self.run.round.blind.get_reward()?)
                 .target_score(
@@ -324,12 +325,12 @@ impl Game {
                 }
                 //////////////////////////////////////////////////////////////////////////
                 KeyCode::Right => {
-                    if let Some(state) = &mut self.card_list_widget_state {
+                    if let Some(state) = self.card_list_widget_state.as_mut() {
                         state.move_next()?;
                     }
                 }
                 KeyCode::Left => {
-                    if let Some(state) = &mut self.card_list_widget_state {
+                    if let Some(state) = self.card_list_widget_state.as_mut() {
                         state.move_prev()?;
                     }
                 }
@@ -378,18 +379,14 @@ where
 
 impl HashedContainer for Vec<Card> {
     fn peek_at_index_set(&self, index_set: &HashSet<usize>) -> Self {
-        self.iter()
-            .enumerate()
-            .filter(|(idx, _)| index_set.contains(idx))
-            .map(|(_, card)| *card)
-            .collect()
+        index_set.iter().map(|&idx| self[idx]).collect()
     }
 
     fn drain_from_index_set(&mut self, index_set: &HashSet<usize>) -> Result<Self> {
         let (selected, leftover): (Self, Self) = self
-            .iter_mut()
+            .iter()
             .enumerate()
-            .map(|(idx, card)| (idx, *card))
+            .map(|(idx, &card)| (idx, card))
             .partition_map(|(idx, card)| {
                 if index_set.contains(&idx) {
                     Either::Left(card)

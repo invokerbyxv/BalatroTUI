@@ -10,7 +10,8 @@ use ratatui::{
     },
 };
 
-/// [`Widget`] for depicting [`crate::core::blind::Blind`] with text inside.
+/// [`Widget`] for depicting [`balatro_tui_core::blind::Blind`] with text
+/// inside.
 ///
 /// Widget construction uses builder pattern which can be started using the
 /// [`Self::new()`] method.

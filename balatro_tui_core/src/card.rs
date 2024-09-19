@@ -203,17 +203,19 @@ impl Rank {
 }
 
 impl PartialOrd for Rank {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for Rank {
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        if *self == Self::Ace {
+        if self == &Self::Ace {
             return Ordering::Greater;
         }
-        if *other == Self::Ace {
+        if other == &Self::Ace {
             return Ordering::Less;
         }
         (*self as usize).cmp(&(*other as usize))

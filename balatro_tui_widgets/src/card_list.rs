@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use balatro_tui_core::card::Card;
 use color_eyre::{
     eyre::{bail, OptionExt},
     Result,
@@ -16,7 +17,6 @@ use ratatui::{
 };
 
 use super::CardWidget;
-use crate::core::card::Card;
 
 /// Provide bidirectional circular cursor for iterators with ability to select
 /// items.
@@ -45,9 +45,11 @@ pub trait SelectableList {
 
 /// Render state for [`CardListWidget`].
 ///
-/// Holds a atomic mutable reference to a [`Vec<Card>`]. Tracks the current cursor position and selected [`Card`] set.
+/// Holds a atomic mutable reference to a [`Vec<Card>`]. Tracks the current
+/// cursor position and selected [`Card`] set.
 ///
-/// [`CardListWidget`] can be created out of a [`Vec<Card>`] reference using the [`Self::from()`] implementation.
+/// [`CardListWidget`] can be created out of a [`Vec<Card>`] reference using the
+/// [`Self::from()`] implementation.
 ///
 /// ```
 /// let cards = vec![
@@ -77,7 +79,8 @@ pub struct CardListWidgetState {
 }
 
 impl CardListWidgetState {
-    /// Update the [`Self::selection_limit`] and return the [`CardListWidgetState`] instance.
+    /// Update the [`Self::selection_limit`] and return the
+    /// [`CardListWidgetState`] instance.
     #[must_use = "Card list widget state builder returned instance must be used."]
     #[inline]
     pub fn selection_limit(mut self, selection_limit: Option<usize>) -> Result<Self> {

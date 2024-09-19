@@ -1,4 +1,4 @@
-//! Core definitions and implementations for running a game of Balatro
+//! Core definitions and implementations for running a game of Balatro TUI
 
 pub mod blind;
 pub mod card;

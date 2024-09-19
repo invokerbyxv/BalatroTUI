@@ -7,8 +7,6 @@
 use color_eyre::{eyre::Context, Result};
 use game::Game;
 
-pub mod components;
-pub mod core;
 pub mod event;
 pub mod game;
 pub mod tui;
