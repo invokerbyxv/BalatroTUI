@@ -15,15 +15,20 @@ use super::card::{Card, Rank, Sortable};
 /// A scoring hand has associated values of base `chips` and `multiplier` to be
 /// used when scoring the hand.
 ///
-/// [`ScoringHand`] also implements conversion from string representation
+/// [`ScoringHand`] also implements conversion from string representation.
 ///
 /// ```
-/// assert_eq!(ScoringHand::from("Flush"), ScoringHand::Flush);
+/// # use std::str::FromStr;
+/// # use balatro_tui_core::scorer::ScoringHand;
+/// assert_eq!(ScoringHand::from_str("Flush").unwrap(), ScoringHand::Flush);
 /// assert_eq!(
-///     ScoringHand::from("Four of a Kind"),
+///     ScoringHand::from_str("Four of a Kind").unwrap(),
 ///     ScoringHand::FourOfAKind
 /// );
-/// assert_eq!(ScoringHand::from("Two Pair"), ScoringHand::TwoPair);
+/// assert_eq!(
+///     ScoringHand::from_str("Two Pair").unwrap(),
+///     ScoringHand::TwoPair,
+/// );
 /// ```
 ///
 /// The scoring hands are provided in order of scoring precedence (reverse in
