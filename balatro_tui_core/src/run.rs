@@ -3,10 +3,12 @@
 //! Across a run, there are multiple rounds played. If any round is failed, the
 //! run is over.
 
-use std::sync::{Arc, RwLock};
+use std::{
+    num::NonZeroUsize,
+    sync::{Arc, RwLock},
+};
 
 use color_eyre::Result;
-use rand::distributions::{Alphanumeric, DistString};
 
 use super::{deck::Deck, round::Round};
 
@@ -23,19 +25,6 @@ pub struct RunProperties {
     pub seed: String,
     /// Initial amount of money that the run starts with.
     pub starting_money: usize,
-}
-
-impl Default for RunProperties {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            hand_size: 10,
-            max_discards: 3,
-            max_hands: 3,
-            seed: Alphanumeric.sample_string(&mut rand::thread_rng(), 16),
-            starting_money: 10,
-        }
-    }
 }
 
 /// [`Run`] struct maintains the working state of a run, along with the rounds
@@ -57,7 +46,7 @@ pub struct Run {
     /// An instance of a [`Round`].
     pub round: Round,
     /// Used to keep track of the last played [`Round`] number.
-    pub upcoming_round_number: usize,
+    pub upcoming_round_number: NonZeroUsize,
 }
 
 impl Run {

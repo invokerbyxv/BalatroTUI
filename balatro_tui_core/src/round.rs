@@ -7,7 +7,10 @@
 //! [`Round::blind`], the round is considered as lost, returning the user to
 //! game over screen.
 
-use std::sync::{Arc, RwLock};
+use std::{
+    num::NonZeroUsize,
+    sync::{Arc, RwLock},
+};
 
 use color_eyre::{
     eyre::{bail, OptionExt},
@@ -26,22 +29,11 @@ use super::{
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RoundProperties {
     /// Current ante of the rounds. Game ends after beating ante `8`.
-    pub ante: usize,
+    pub ante: NonZeroUsize,
     /// Number of total cards that will be available in hand in a fresh turn.
     pub hand_size: usize,
     /// Current round number. Game ends after round beating `24`.
-    pub round_number: usize,
-}
-
-impl Default for RoundProperties {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            hand_size: 10,
-            ante: 1,
-            round_number: 1,
-        }
-    }
+    pub round_number: NonZeroUsize,
 }
 
 /// [`Round`] struct carries the running state of a particular round.

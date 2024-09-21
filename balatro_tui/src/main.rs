@@ -14,7 +14,7 @@ pub mod tui;
 #[tokio::main]
 async fn main() -> Result<()> {
     // Start Game
-    let mut game = Game::new();
+    let mut game = Game::new()?;
     game.start()
         .await
         .wrap_err("Error encountered while running the game.")?;

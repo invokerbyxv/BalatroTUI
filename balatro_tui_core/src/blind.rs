@@ -4,6 +4,8 @@
 //! The [`Blind`] enum is the entrypoint, data carrier and defines property
 //! access methods.
 
+use std::num::NonZeroUsize;
+
 use color_eyre::{
     eyre::{bail, OptionExt},
     Result,
@@ -129,7 +131,8 @@ pub enum Bosses {
     Head,
     /// Lose $1 per card played
     Tooth,
-    /// The base Chips and Mult for playing a poker hand are halved this round
+    /// The base Chips and Multiplier for playing a poker hand are halved this
+    /// round
     Flint,
     /// All face cards are drawn face down
     Mark,
@@ -140,15 +143,10 @@ const BLIND_BASE_AMOUNTS: [usize; 8] = [3, 8, 20, 50, 110, 200, 350, 500];
 impl Blind {
     /// Returns the target score required to cross the round with this blind.
     #[inline]
-    pub fn get_target_score(&self, ante: usize) -> Result<usize> {
-        if ante >= BLIND_BASE_AMOUNTS.len() {
+    pub fn get_target_score(&self, ante: NonZeroUsize) -> Result<usize> {
+        if ante.get() >= BLIND_BASE_AMOUNTS.len() {
             // TODO: Implement endless mode blind base score calculation.
             bail!("Ante has crossed maximum computable ante. Need additional implementation.");
-        }
-
-        // TODO: Use NonZeroUsize for ante and round_number.
-        if ante == 0 {
-            bail!("Invalid ante provided. An ante can only be a positive, non-zero number.");
         }
 
         let blind_multiple = str::parse::<usize>(self.get_str("score_multiplier").ok_or_eyre(
@@ -177,7 +175,8 @@ impl Blind {
             .checked_mul(
                 *BLIND_BASE_AMOUNTS
                     .get(
-                        ante.checked_sub(1)
+                        ante.get()
+                            .checked_sub(1)
                             .ok_or_eyre("Subtraction operation overflowed")?,
                     )
                     .ok_or_eyre(format!(

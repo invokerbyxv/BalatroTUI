@@ -1,21 +1,22 @@
 {
     "cSpell.words": [
-        "Balatro",
+        "balatro",
         "clippy",
         "conv",
-        "Crossterm",
+        "crossterm",
         "cursorvec",
         "debuffed",
-        "Itertools",
+        "itertools",
         "libc",
-        "Mult",
         "peekable",
         "ratatui",
         "repr",
         "rustc",
         "seekable",
-        "SIGTSTP",
+        "sigtstp",
         "structs",
-        "thiserror"
+        "thiserror",
+        "usize",
+        "zeroable"
     ]
 }

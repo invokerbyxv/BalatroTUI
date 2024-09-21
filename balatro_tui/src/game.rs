@@ -6,6 +6,7 @@
 //! game and [`Game::start()`] to spawn a new instance of a running game.
 
 use std::{
+    num::NonZeroUsize,
     str::FromStr,
     sync::{Arc, Mutex, RwLock},
 };
@@ -29,6 +30,10 @@ use color_eyre::{
 };
 use crossterm::event::{KeyCode, KeyModifiers};
 use itertools::{Either, Itertools};
+use rand::{
+    distributions::{Alphanumeric, DistString},
+    thread_rng,
+};
 use ratatui::{
     layout::{Constraint, Flex, Layout, Margin, Rect},
     style::Color,
@@ -81,16 +86,27 @@ impl Game {
     )]
     #[must_use = "Created game instance must be used."]
     #[inline]
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self> {
         let deck = Arc::new(RwLock::new(Deck::standard()));
-        let run_properties = RunProperties::default();
-        let max_hands = run_properties.max_hands;
-        let max_discards = run_properties.max_discards;
-        Self {
+        let max_discards = 3;
+        let max_hands = 3;
+        let run_properties = RunProperties {
+            hand_size: 10,
+            max_discards,
+            max_hands,
+            seed: Alphanumeric.sample_string(&mut thread_rng(), 16),
+            starting_money: 10,
+        };
+        let round_properties = RoundProperties {
+            hand_size: 10,
+            ante: NonZeroUsize::new(1).ok_or_eyre("Could not create ante number")?,
+            round_number: NonZeroUsize::new(1).ok_or_eyre("Could not create round number")?,
+        };
+        Ok(Self {
             run: Run {
                 deck: Arc::clone(&deck),
                 money: run_properties.starting_money,
-                properties: run_properties,
+                properties: run_properties.clone(),
                 round: Round {
                     blind: Blind::Small,
                     deck: Arc::clone(&deck),
@@ -98,14 +114,15 @@ impl Game {
                     hand: vec![],
                     hands_count: max_hands,
                     history: vec![],
-                    properties: RoundProperties::default(),
+                    properties: round_properties,
                     score: 0,
                 },
-                upcoming_round_number: 1,
+                upcoming_round_number: NonZeroUsize::new(1)
+                    .ok_or_eyre("Could not create upcoming round number")?,
             },
             should_quit: false,
             card_list_widget_state: None,
-        }
+        })
     }
 
     /// Main entrypoint of the game.
@@ -161,7 +178,7 @@ impl Game {
     /// Runs every tick provided by the rendering interface.
     fn draw(&mut self, frame: &mut Frame<'_>, area: Rect) -> Result<()> {
         // Prepare variables
-        // TODO: Pass these from outside or implement caching to avoid needless calls.
+        // TODO: Update only when a card is selected/deselected.
         let scoring_hand_opt = Scorer::get_scoring_hand(
             &self.run.round.hand.peek_at_index_set(
                 &self
@@ -254,8 +271,6 @@ impl Game {
                 round: self.run.round.properties.round_number,
             },
         );
-
-        // TODO: Use ListWidget to handle selection instead.
 
         //////////////////////////////////////////////////////////////////////////
 

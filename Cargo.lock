@@ -119,6 +119,7 @@ dependencies = [
  "human-panic",
  "itertools",
  "libc",
+ "rand",
  "ratatui",
  "strip-ansi-escapes",
  "tokio",

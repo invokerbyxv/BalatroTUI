@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Layout, Margin, Rect},
@@ -11,7 +13,7 @@ use super::text_box::TextBoxWidget;
 const RUN_STATS_CONTENT_HEIGHT: u16 = 15;
 
 /// Render state for [`RunStatsWidget`].
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct RunStatsWidgetState {
     /// Number of remaining hands
     pub hands: usize,
@@ -20,9 +22,9 @@ pub struct RunStatsWidgetState {
     /// Money available in the run
     pub money: usize,
     /// Current run ante
-    pub ante: usize,
+    pub ante: NonZeroUsize,
     /// Current round number
-    pub round: usize,
+    pub round: NonZeroUsize,
 }
 
 /// [`Widget`] to show stats for a run.
