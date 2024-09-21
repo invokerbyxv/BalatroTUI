@@ -66,6 +66,7 @@ use unicode_segmentation::UnicodeSegmentation;
     EnumDisplay,
     EnumCount,
     EnumIter,
+    EnumProperty,
     EnumString,
     Eq,
     Hash,
@@ -76,17 +77,25 @@ use unicode_segmentation::UnicodeSegmentation;
 )]
 pub enum Suit {
     /// Club suit (♣/C)
-    #[strum(serialize = "\u{2663}", serialize = "C")]
+    #[strum(serialize = "\u{2663}", serialize = "C", props(display = "\u{2663}"))]
     Club,
     /// Diamond suit (♦/D)
-    #[strum(serialize = "\u{2666}", serialize = "D")]
+    #[strum(serialize = "\u{2666}", serialize = "D", props(display = "\u{2666}"))]
     Diamond,
     /// Heart suit (♥/H)
-    #[strum(serialize = "\u{2665}", serialize = "H")]
+    #[strum(serialize = "\u{2665}", serialize = "H", props(display = "\u{2665}"))]
     Heart,
     /// Spade suit (♠/S)
-    #[strum(serialize = "\u{2660}", serialize = "S")]
+    #[strum(serialize = "\u{2660}", serialize = "S", props(display = "\u{2660}"))]
     Spade,
+}
+
+impl Suit {
+    /// Returns deterministic display value for the rank.
+    pub fn get_display(&self) -> String {
+        self.get_str("display")
+            .map_or_else(|| self.to_string(), Into::into)
+    }
 }
 
 /// Represents the rank of the card.
@@ -160,7 +169,7 @@ pub enum Suit {
 )]
 pub enum Rank {
     /// Ace rank (A)
-    #[strum(serialize = "A", serialize = "1", props(score = "10"))]
+    #[strum(serialize = "A", serialize = "1", props(score = "10", display = "A"))]
     Ace = 1,
     /// Two rank (2)
     #[strum(serialize = "2", props(score = "2"))]
@@ -190,13 +199,13 @@ pub enum Rank {
     #[strum(serialize = "10", props(score = "10"))]
     Ten,
     /// Jack rank (11)
-    #[strum(serialize = "J", serialize = "11", props(score = "10"))]
+    #[strum(serialize = "J", serialize = "11", props(score = "10", display = "J"))]
     Jack,
     /// Queen rank (12)
-    #[strum(serialize = "Q", serialize = "12", props(score = "10"))]
+    #[strum(serialize = "Q", serialize = "12", props(score = "10", display = "Q"))]
     Queen,
     /// King rank (13)
-    #[strum(serialize = "K", serialize = "13", props(score = "10"))]
+    #[strum(serialize = "K", serialize = "13", props(score = "10", display = "K"))]
     King,
 }
 
@@ -208,6 +217,12 @@ impl Rank {
         Ok(str::parse(self.get_str("score").ok_or_eyre(format!(
             "Score could not be fetched for rank: {self}."
         ))?)?)
+    }
+
+    /// Returns deterministic display value for the rank.
+    pub fn get_display(&self) -> String {
+        self.get_str("display")
+            .map_or_else(|| self.to_string(), Into::into)
     }
 }
 

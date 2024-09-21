@@ -40,5 +40,6 @@ tokio = { version = "1.40.0", features = ["full"] }
 tokio-util = "0.7.12"
 tracing = "0.1.40"
 strip-ansi-escapes = "0.2.0"
+bit-set = "0.8.0"
 
 [dev-dependencies]

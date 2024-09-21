@@ -98,14 +98,27 @@ impl StatefulWidget for CardWidget {
             .render(inner_area, buf);
 
         // Render widgets
-        Paragraph::new(format!("{}\r\n{}", state.rank, state.suit))
-            .left_aligned()
-            .render(top_area, buf);
+        Paragraph::new(format!(
+            "{}\r\n{}",
+            state.rank.get_display(),
+            state.suit.get_display()
+        ))
+        .left_aligned()
+        .render(top_area, buf);
         // TODO: Mimic actual card suit layout
-        TextBoxWidget::new([Line::from(format!("{}{}", state.rank, state.suit)).centered()])
-            .render(middle_area, buf);
-        Paragraph::new(format!("{}\r\n{}", state.suit, state.rank))
-            .right_aligned()
-            .render(bottom_area, buf);
+        TextBoxWidget::new([Line::from(format!(
+            "{}{}",
+            state.rank.get_display(),
+            state.suit.get_display()
+        ))
+        .centered()])
+        .render(middle_area, buf);
+        Paragraph::new(format!(
+            "{}\r\n{}",
+            state.suit.get_display(),
+            state.rank.get_display()
+        ))
+        .right_aligned()
+        .render(bottom_area, buf);
     }
 }

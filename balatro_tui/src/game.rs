@@ -6,7 +6,6 @@
 //! game and [`Game::start()`] to spawn a new instance of a running game.
 
 use std::{
-    collections::HashSet,
     str::FromStr,
     sync::{Arc, Mutex, RwLock},
 };
@@ -23,6 +22,7 @@ use balatro_tui_widgets::{
     CardListWidget, CardListWidgetState, RoundInfoWidget, RoundScoreWidget, RunStatsWidget,
     RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState, SelectableList,
 };
+use bit_set::BitSet;
 use color_eyre::{
     eyre::{bail, Context, OptionExt},
     Result,
@@ -370,18 +370,18 @@ where
     Self: IntoIterator + Sized,
 {
     /// Returns a cloned [`Vec`] based on arbitrary indices set.
-    fn peek_at_index_set(&self, index_set: &HashSet<usize>) -> Result<Self>;
+    fn peek_at_index_set(&self, index_set: &BitSet) -> Result<Self>;
     /// Drains the iterator based on arbitrary indices (see [`Vec::drain()`] for
     /// equivalent usage with contiguous range) and returns the drained items in
     /// a [`Vec`].
-    fn drain_from_index_set(&mut self, index_set: &HashSet<usize>) -> Result<Self>;
+    fn drain_from_index_set(&mut self, index_set: &BitSet) -> Result<Self>;
 }
 
 impl HashedContainer for Vec<Card> {
-    fn peek_at_index_set(&self, index_set: &HashSet<usize>) -> Result<Self> {
+    fn peek_at_index_set(&self, index_set: &BitSet) -> Result<Self> {
         index_set
             .iter()
-            .map(|&idx| {
+            .map(|idx| {
                 self.get(idx)
                     .copied()
                     .ok_or_eyre("Invalid index accessed. Index set may be invalid.")
@@ -389,13 +389,13 @@ impl HashedContainer for Vec<Card> {
             .process_results(|iter| iter.collect())
     }
 
-    fn drain_from_index_set(&mut self, index_set: &HashSet<usize>) -> Result<Self> {
+    fn drain_from_index_set(&mut self, index_set: &BitSet) -> Result<Self> {
         let (selected, leftover): (Self, Self) = self
             .iter()
             .enumerate()
             .map(|(idx, &card)| (idx, card))
             .partition_map(|(idx, card)| {
-                if index_set.contains(&idx) {
+                if index_set.contains(idx) {
                     Either::Left(card)
                 } else {
                     Either::Right(card)

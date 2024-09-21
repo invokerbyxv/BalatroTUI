@@ -1,9 +1,7 @@
-use std::{
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use balatro_tui_core::card::Card;
+use bit_set::BitSet;
 use color_eyre::{
     eyre::{bail, OptionExt},
     Result,
@@ -76,7 +74,7 @@ pub struct CardListWidgetState {
     pub pos: Option<usize>,
     // TODO: Use bit-mask for selected value over usize
     /// A cache of selected card indices.
-    pub selected: HashSet<usize>,
+    pub selected: BitSet,
     /// Optional limit defines the maximum cards that can be selected.
     pub selection_limit: Option<usize>,
 }
@@ -109,7 +107,7 @@ impl From<Arc<Mutex<Vec<Card>>>> for CardListWidgetState {
         Self {
             cards: value,
             pos: None,
-            selected: HashSet::new(),
+            selected: BitSet::new(),
             selection_limit: None,
         }
     }
@@ -189,7 +187,7 @@ impl SelectableList for CardListWidgetState {
     #[inline]
     fn deselect(&mut self) -> Result<bool> {
         if let Some(pos) = self.pos {
-            return Ok(self.selected.remove(&pos));
+            return Ok(self.selected.remove(pos));
         }
 
         Ok(false)
@@ -263,7 +261,7 @@ impl StatefulWidget for CardListWidget {
             .zip_eq(deck_areas.iter().copied())
             .enumerate()
             .for_each(|(idx, (mut card, mut card_area))| {
-                if state.selected.contains(&idx) {
+                if state.selected.contains(idx) {
                     card_area = card_area.offset(Offset { x: 0, y: -5 });
                 }
 
