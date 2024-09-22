@@ -9,6 +9,7 @@
 mod blind_badge;
 mod card;
 mod card_list;
+pub mod error;
 mod round_info;
 mod round_score;
 mod run_stats;

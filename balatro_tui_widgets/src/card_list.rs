@@ -2,10 +2,6 @@ use std::sync::{Arc, Mutex};
 
 use balatro_tui_core::card::Card;
 use bit_set::BitSet;
-use color_eyre::{
-    eyre::{bail, OptionExt},
-    Result,
-};
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
@@ -15,6 +11,7 @@ use ratatui::{
 };
 
 use super::CardWidget;
+use crate::error::{ArithmeticError, WidgetError};
 
 /// Provide bidirectional circular cursor for iterators with ability to select
 /// items.
@@ -24,16 +21,16 @@ use super::CardWidget;
 pub trait SelectableList {
     /// Move the cursor to next item. If next item doesn't exist, cycle back to
     /// the first item.
-    fn move_next(&mut self) -> Result<()>;
+    fn move_next(&mut self) -> Result<(), WidgetError>;
     /// Move the cursor to previous item. If previous item doesn't exist, cycle
     /// to the last item.
-    fn move_prev(&mut self) -> Result<()>;
+    fn move_prev(&mut self) -> Result<(), WidgetError>;
     /// Add item at current cursor position to the selection list. No-op if the
     /// index is already selected.
-    fn select(&mut self) -> Result<bool>;
+    fn select(&mut self) -> Result<bool, WidgetError>;
     /// Remove item at current cursor position from the selection list. No-op if
     /// the index is already deselected.
-    fn deselect(&mut self) -> Result<bool>;
+    fn deselect(&mut self) -> Result<bool, WidgetError>;
     /// Unfocus (blur) the list. This method removes the cursor from the list.
     fn blur(&mut self);
 }
@@ -84,9 +81,14 @@ impl CardListWidgetState {
     /// [`CardListWidgetState`] instance.
     #[must_use = "Card list widget state builder returned instance must be used."]
     #[inline]
-    pub fn selection_limit(mut self, selection_limit: Option<usize>) -> Result<Self> {
-        if selection_limit.is_some_and(|limit| limit < self.selected.len()) {
-            bail!("Cannot reduce selection limit if number of selected cards is more than it.")
+    pub fn selection_limit(mut self, selection_limit: Option<usize>) -> Result<Self, WidgetError> {
+        if let Some(limit) = selection_limit {
+            if limit < self.selected.len() {
+                return Err(WidgetError::SelectionLimitOverflow {
+                    attempted_selection_limit: limit,
+                    max_allowed: self.selected.len(),
+                });
+            }
         }
 
         self.selection_limit = selection_limit;
@@ -119,19 +121,15 @@ impl SelectableList for CardListWidgetState {
         clippy::integer_division_remainder_used,
         reason = "Intended: Modulo arithmetic is pre-checked."
     )]
-    fn move_next(&mut self) -> Result<()> {
+    fn move_next(&mut self) -> Result<(), WidgetError> {
         if let Some(pos) = self.pos {
-            let max_length = self
-                .cards
-                .lock()
-                .or_else(|err| bail!("Could not attain lock for cards: {err}."))?
-                .len();
+            let max_length = self.cards.try_lock()?.len();
 
             self.pos = Some(
                 (pos.checked_add(max_length)
-                    .ok_or_eyre("Addition operation overflowed")?
+                    .ok_or(ArithmeticError::Overflow("addition"))?
                     .checked_add(1)
-                    .ok_or_eyre("Addition operation overflowed")?)
+                    .ok_or(ArithmeticError::Overflow("addition"))?)
                     % max_length,
             );
         } else {
@@ -146,19 +144,15 @@ impl SelectableList for CardListWidgetState {
         clippy::integer_division_remainder_used,
         reason = "Intended: Modulo arithmetic is pre-checked."
     )]
-    fn move_prev(&mut self) -> Result<()> {
+    fn move_prev(&mut self) -> Result<(), WidgetError> {
         if let Some(pos) = self.pos {
-            let max_length = self
-                .cards
-                .lock()
-                .or_else(|err| bail!("Could not attain lock for cards: {err}."))?
-                .len();
+            let max_length = self.cards.try_lock()?.len();
 
             self.pos = Some(
                 (pos.checked_add(max_length)
-                    .ok_or_eyre("Addition operation overflowed")?
+                    .ok_or(ArithmeticError::Overflow("addition"))?
                     .checked_sub(1)
-                    .ok_or_eyre("Addition operation overflowed")?)
+                    .ok_or(ArithmeticError::Overflow("addition"))?)
                     % max_length,
             );
         } else {
@@ -169,7 +163,7 @@ impl SelectableList for CardListWidgetState {
     }
 
     #[inline]
-    fn select(&mut self) -> Result<bool> {
+    fn select(&mut self) -> Result<bool, WidgetError> {
         if self
             .selection_limit
             .is_some_and(|limit| limit < self.selected.len())
@@ -185,7 +179,7 @@ impl SelectableList for CardListWidgetState {
     }
 
     #[inline]
-    fn deselect(&mut self) -> Result<bool> {
+    fn deselect(&mut self) -> Result<bool, WidgetError> {
         if let Some(pos) = self.pos {
             return Ok(self.selected.remove(pos));
         }

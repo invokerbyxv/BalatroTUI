@@ -11,23 +11,28 @@ use thiserror::Error;
 /// Defines errors relating to arithmetic operation failures.
 #[derive(Clone, Copy, Debug, Error)]
 pub enum ArithmeticError {
-    /// Signifies that an arithmetic operation has overflown. Error message provides which kind of operation is overflowing.
+    /// Signifies that an arithmetic operation has overflown. Error message
+    /// provides which kind of operation is overflowing.
     #[error("Arithmetic operation {0} overflowed")]
     Overflow(&'static str),
 }
 
-/// Defines errors relating to conversion and parsing between enum, string and integers for the target enum and its properties.
+/// Defines errors relating to conversion and parsing between enum, string and
+/// integers for the target enum and its properties.
 #[derive(Clone, Debug, Error)]
 pub enum StrumError {
-    /// Provides conversion from [`ParseError`] to [`StrumError`] used in [`std::str::FromStr`] trait.
+    /// Provides conversion from [`ParseError`] to [`StrumError`] used in
+    /// [`std::str::FromStr`] trait.
     #[error("Parsing enum from string failed: {0:?}")]
     FromStringError(#[from] ParseError),
 
-    /// Provides conversion from [`ParseError`] to [`StrumError`] using [`str::parse()`].
+    /// Provides conversion from [`ParseError`] to [`StrumError`] using
+    /// [`str::parse()`].
     #[error("Parsing integer property from enum failed: {0:?}")]
     ParseIntError(#[from] ParseIntError),
 
-    /// Signifies that a property defined using [`strum::EnumProperty`] was not found on a queried variant.
+    /// Signifies that a property defined using [`strum::EnumProperty`] was not
+    /// found on a queried variant.
     #[error("Enum property {property} not found on variant: {variant}")]
     PropertyNotFound {
         /// The queried enum property.
@@ -45,7 +50,8 @@ pub enum StrumError {
 #[derive(Clone, Debug, Error)]
 pub enum ScorerError {
     // TODO: Remove when infinite ante is implemented.
-    /// Signifies that the current `ante` has exceeded the maximum possible `ante` count of 8.
+    /// Signifies that the current `ante` has exceeded the maximum possible
+    /// `ante` count of 8.
     #[error("Current ante has crossed maximum computable ante: {0}")]
     AnteExceeded(usize),
 
@@ -65,11 +71,13 @@ pub enum ScorerError {
 /// Defines top-level errors for the crate.
 #[derive(Clone, Debug, Error)]
 pub enum CoreError {
-    /// Signifies inability to acquire write lock on shared `deck`. This should result in immediate exit and cleanup.
+    /// Signifies inability to acquire write lock on shared `deck`. This should
+    /// result in immediate exit and cleanup.
     #[error("Could not acquire write lock on deck: {0:?}")]
     DeckLockError(String),
 
-    /// Signifies that a hand discard was attempted when discards were not available.
+    /// Signifies that a hand discard was attempted when discards were not
+    /// available.
     #[error("Attempted to discard hand but no discards remaining")]
     DiscardsExhaustedError,
 

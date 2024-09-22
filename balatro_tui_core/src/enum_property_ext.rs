@@ -1,4 +1,5 @@
-//! This module exposes traits that extend strum to provide crate compatible [`Result`]
+//! This module exposes traits that extend strum to provide crate compatible
+//! [`Result`]
 
 use strum::EnumProperty;
 

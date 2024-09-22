@@ -145,7 +145,6 @@ version = "0.1.2"
 dependencies = [
  "balatro_tui_core",
  "bit-set",
- "color-eyre",
  "itertools",
  "ratatui",
  "thiserror",
