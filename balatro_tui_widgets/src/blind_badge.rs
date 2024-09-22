@@ -90,10 +90,6 @@ impl Widget for BlindBadgeWidget {
                     .rev()
                     .enumerate()
                     .for_each(|(idx, line)| {
-                        #[expect(
-                            clippy::as_conversions,
-                            reason = "Intended: Expanding to a larger type for API conformity."
-                        )]
                         ctx.print(-1.0, idx as f64, line);
                     });
             })

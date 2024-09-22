@@ -116,21 +116,21 @@ impl From<Arc<RwLock<Vec<Card>>>> for CardListWidgetState {
 }
 
 impl SelectableList for CardListWidgetState {
-    #[expect(
-        clippy::arithmetic_side_effects,
-        clippy::integer_division_remainder_used,
-        reason = "Intended: Modulo arithmetic is pre-checked."
-    )]
     fn move_next(&mut self) -> Result<(), WidgetError> {
         if let Some(pos) = self.pos {
-            let max_length = self.cards.try_read()?.len();
-
+            let last_index = self
+                .cards
+                .try_read()?
+                .len()
+                .checked_sub(1)
+                .ok_or(ArithmeticError::Overflow("subtraction"))?;
             self.pos = Some(
-                (pos.checked_add(max_length)
-                    .ok_or(ArithmeticError::Overflow("addition"))?
-                    .checked_add(1)
-                    .ok_or(ArithmeticError::Overflow("addition"))?)
-                    % max_length,
+                if pos == last_index {
+                    0
+                } else {
+                    pos.checked_add(1)
+                        .ok_or(ArithmeticError::Overflow("addition"))?
+                },
             );
         } else {
             self.pos = Some(0);
@@ -139,21 +139,16 @@ impl SelectableList for CardListWidgetState {
         Ok(())
     }
 
-    #[expect(
-        clippy::arithmetic_side_effects,
-        clippy::integer_division_remainder_used,
-        reason = "Intended: Modulo arithmetic is pre-checked."
-    )]
     fn move_prev(&mut self) -> Result<(), WidgetError> {
         if let Some(pos) = self.pos {
-            let max_length = self.cards.try_read()?.len();
-
             self.pos = Some(
-                (pos.checked_add(max_length)
-                    .ok_or(ArithmeticError::Overflow("addition"))?
-                    .checked_sub(1)
-                    .ok_or(ArithmeticError::Overflow("addition"))?)
-                    % max_length,
+                (if pos == 0 {
+                    self.cards.try_read()?.len()
+                } else {
+                    pos
+                })
+                .checked_sub(1)
+                .ok_or(ArithmeticError::Overflow("subtraction"))?,
             );
         } else {
             self.pos = Some(0);

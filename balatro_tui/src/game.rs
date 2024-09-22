@@ -60,7 +60,7 @@ pub const MAXIMUM_SELECTABLE_CARDS: usize = 5;
 /// surrounding states, that allow early closure of a run.
 #[expect(
     clippy::partial_pub_fields,
-    reason = "Intended: Card list widget is an internal field only accessible by the Game instance."
+    reason = "Refactor: Move cached widget instances into `GameWidgetCache` struct."
 )]
 #[derive(Debug)]
 pub struct Game {
@@ -72,7 +72,7 @@ pub struct Game {
     pub should_quit: bool,
     /// A cached card list widget state. This caching is required for showing
     /// selection and hovering for [`CardListWidget`].
-    pub(self) card_list_widget_state: Option<CardListWidgetState>,
+    card_list_widget_state: Option<CardListWidgetState>,
 }
 
 impl Game {
