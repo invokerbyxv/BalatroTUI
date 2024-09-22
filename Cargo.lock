@@ -131,7 +131,6 @@ dependencies = [
 name = "balatro_tui_core"
 version = "0.1.2"
 dependencies = [
- "color-eyre",
  "itertools",
  "once_cell",
  "rand",

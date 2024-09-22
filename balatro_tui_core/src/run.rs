@@ -8,9 +8,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use color_eyre::Result;
-
 use super::{deck::Deck, round::Round};
+use crate::error::CoreError;
 
 /// Persistent details about the run.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -53,7 +52,7 @@ impl Run {
     /// Main entrypoint of the run. It initializes the internal state and spawns
     /// a round.
     #[inline]
-    pub fn start(&mut self) -> Result<()> {
+    pub fn start(&mut self) -> Result<(), CoreError> {
         self.round.start()
     }
 }

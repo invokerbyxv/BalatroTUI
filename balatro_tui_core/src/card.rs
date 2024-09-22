@@ -11,17 +11,17 @@ use std::{
     collections::HashMap,
     fmt::{Display, Formatter, Result as FmtResult},
     ops::{Add, Sub},
-    result::Result as StdResult,
     str::FromStr,
 };
 
-use color_eyre::{
-    eyre::{OptionExt, Report},
-    Result,
-};
 use itertools::Itertools;
 use strum::{Display as EnumDisplay, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr};
 use unicode_segmentation::UnicodeSegmentation;
+
+use crate::{
+    enum_property_ext::EnumPropertyExt,
+    error::{ArithmeticError, StrumError},
+};
 
 /// Represents the suit of a card.
 ///
@@ -212,11 +212,8 @@ pub enum Rank {
 impl Rank {
     /// Returns score for given rank to be used in card scoring.
     #[inline]
-    pub fn get_score(&self) -> Result<usize> {
-        // TODO: Use get_int() when stabilized
-        Ok(str::parse(self.get_str("score").ok_or_eyre(format!(
-            "Score could not be fetched for rank: {self}."
-        ))?)?)
+    pub fn get_score(&self) -> Result<usize, StrumError> {
+        self.get_int_property("score")
     }
 
     /// Returns deterministic display value for the rank.
@@ -253,7 +250,7 @@ impl Add for Rank {
     fn add(self, rhs: Self) -> Self::Output {
         (self as usize)
             .checked_add(rhs as usize)
-            .ok_or_eyre("Add operation overflowed")
+            .ok_or(ArithmeticError::Overflow("addition"))
             .unwrap()
     }
 }
@@ -264,7 +261,7 @@ impl Sub for Rank {
     fn sub(self, rhs: Self) -> Self::Output {
         (self as isize)
             .checked_sub(rhs as isize)
-            .ok_or_eyre("Subtract operation overflowed")
+            .ok_or(ArithmeticError::Overflow("subtraction"))
             .unwrap()
     }
 }
@@ -319,13 +316,13 @@ impl Display for Card {
 }
 
 impl FromStr for Card {
-    type Err = Report;
+    type Err = StrumError;
 
-    fn from_str(s: &str) -> StdResult<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut chars = s.graphemes(true).collect::<Vec<_>>();
         let suit_str = chars
             .pop()
-            .ok_or_eyre("Could not unpack suit from provided string when parsing card.")?;
+            .ok_or_else(|| StrumError::SuitUnpackError(s.to_owned()))?;
         Ok(Self {
             rank: Rank::from_str(&chars.join(""))?,
             suit: Suit::from_str(suit_str)?,
@@ -397,7 +394,7 @@ impl Sortable for [Card] {
                     .and_modify(|entry: &mut usize| {
                         *entry = entry
                             .checked_add(1)
-                            .ok_or_eyre("Add operation overflowed")
+                            .ok_or(ArithmeticError::Overflow("addition"))
                             .unwrap();
                     })
                     .or_insert(1);
@@ -419,7 +416,7 @@ impl Sortable for [Card] {
                     .and_modify(|entry: &mut usize| {
                         *entry = entry
                             .checked_add(1)
-                            .ok_or_eyre("Add operation overflowed")
+                            .ok_or(ArithmeticError::Overflow("addition"))
                             .unwrap();
                     })
                     .or_insert(1);

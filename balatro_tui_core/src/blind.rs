@@ -6,13 +6,14 @@
 
 use std::num::NonZeroUsize;
 
-use color_eyre::{
-    eyre::{bail, OptionExt},
-    Result,
-};
 use strum::{
     Display as EnumDisplay, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr,
     VariantArray,
+};
+
+use crate::{
+    enum_property_ext::EnumPropertyExt,
+    error::{ArithmeticError, ScorerError, StrumError},
 };
 
 /// Blind type can be either small blind, big blind or boss blind.
@@ -143,15 +144,13 @@ const BLIND_BASE_AMOUNTS: [usize; 8] = [3, 8, 20, 50, 110, 200, 350, 500];
 impl Blind {
     /// Returns the target score required to cross the round with this blind.
     #[inline]
-    pub fn get_target_score(&self, ante: NonZeroUsize) -> Result<usize> {
+    pub fn get_target_score(&self, ante: NonZeroUsize) -> Result<usize, ScorerError> {
         if ante.get() >= BLIND_BASE_AMOUNTS.len() {
             // TODO: Implement endless mode blind base score calculation.
-            bail!("Ante has crossed maximum computable ante. Need additional implementation.");
+            return Err(ScorerError::AnteExceeded(ante.get()));
         }
 
-        let blind_multiple = str::parse::<usize>(self.get_str("score_multiplier").ok_or_eyre(
-            format!("Score multiplier could not be fetched for blind: {self}."),
-        )?)?;
+        let blind_multiple = self.get_int_property("score_multiplier")?;
 
         let chips_multiplier: usize = 25;
 
@@ -167,38 +166,30 @@ impl Blind {
             2
         };
 
-        chips_multiplier
+        Ok(chips_multiplier
             .checked_mul(blind_multiple)
-            .ok_or_eyre("Multiplication operation overflowed")?
+            .ok_or(ArithmeticError::Overflow("multiplication"))?
             .checked_mul(boss_blind_multiplier)
-            .ok_or_eyre("Multiplication operation overflowed")?
+            .ok_or(ArithmeticError::Overflow("multiplication"))?
             .checked_mul(
-                *BLIND_BASE_AMOUNTS
-                    .get(
-                        ante.get()
-                            .checked_sub(1)
-                            .ok_or_eyre("Subtraction operation overflowed")?,
-                    )
-                    .ok_or_eyre(format!(
-                        "Cannot get base amount for the blind. Invalid ante passed: {ante}"
-                    ))?,
+                BLIND_BASE_AMOUNTS
+                    .get(ante.get())
+                    .ok_or_else(|| ScorerError::AnteExceeded(ante.get()))?
+                    .checked_sub(1)
+                    .ok_or(ArithmeticError::Overflow("subtraction"))?,
             )
-            .ok_or_eyre("Multiplication operation overflowed")
+            .ok_or(ArithmeticError::Overflow("multiplication"))?)
     }
 
     /// Returns color used to represent the blind.
     #[inline]
-    pub fn get_color(&self) -> Result<&str> {
-        self.get_str("color").ok_or_eyre(format!(
-            "Could not find color property for Blind variant: {self}."
-        ))
+    pub fn get_color(&self) -> Result<&str, StrumError> {
+        self.get_property("color")
     }
 
     /// Returns the reward obtained after defeating the blind.
     #[inline]
-    pub fn get_reward(&self) -> Result<usize> {
-        Ok(str::parse::<usize>(self.get_str("reward").ok_or_eyre(
-            format!("Reward property could not be fetched for blind: {self}."),
-        )?)?)
+    pub fn get_reward(&self) -> Result<usize, StrumError> {
+        self.get_int_property("reward")
     }
 }

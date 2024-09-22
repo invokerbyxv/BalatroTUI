@@ -80,10 +80,6 @@ impl Game {
     ///
     /// This acts as a no-parameter initialization point and should be placed
     /// between user initialization and persistent on-disk configurations.
-    #[expect(
-        clippy::new_without_default,
-        reason = "Intended: Game should only be explicitly created hence default implementation can be skipped."
-    )]
     #[must_use = "Created game instance must be used."]
     #[inline]
     pub fn new() -> Result<Self> {
@@ -106,7 +102,7 @@ impl Game {
             run: Run {
                 deck: Arc::clone(&deck),
                 money: run_properties.starting_money,
-                properties: run_properties.clone(),
+                properties: run_properties,
                 round: Round {
                     blind: Blind::Small,
                     deck: Arc::clone(&deck),

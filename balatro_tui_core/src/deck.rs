@@ -4,13 +4,13 @@
 //! states. To utilize methods described on [`Deck`],
 //! [`DeckConstExt`] and [`DeckExt`] traits must be brought into scope.
 
-use color_eyre::eyre::{bail, OptionExt, Result};
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 use rand::{seq::SliceRandom, thread_rng};
 use strum::IntoEnumIterator;
 
 use super::card::{Card, Rank, Suit};
+use crate::error::{ArithmeticError, CoreError};
 
 // TODO: Use dynamic trait switching to achieve suit and rank sorting. Feed the
 // impl directly to card instead of MultiSortable.
@@ -49,7 +49,7 @@ pub trait DeckExt {
     fn shuffle(&mut self);
     /// Draw random cards from the deck and return new deck.
     #[must_use = "Drawn cards must be used."]
-    fn draw_random(&mut self, draw_size: usize) -> Result<Deck>;
+    fn draw_random(&mut self, draw_size: usize) -> Result<Deck, CoreError>;
 }
 
 impl DeckConstExt for Deck {
@@ -66,17 +66,16 @@ impl DeckExt for Deck {
         self.as_mut_slice().shuffle(&mut thread_rng());
     }
 
-    fn draw_random(&mut self, draw_size: usize) -> Result<Deck> {
+    fn draw_random(&mut self, draw_size: usize) -> Result<Deck, CoreError> {
         if draw_size > self.len() {
-            // TODO: Define custom error
-            bail!("Hand size cannot be greater than the source deck.")
+            return Err(CoreError::HandsExhaustedError);
         }
         self.shuffle();
 
         let drain_size = self
             .len()
             .checked_sub(draw_size)
-            .ok_or_eyre("Subtraction operation overflowed")?;
+            .ok_or(ArithmeticError::Overflow("subtraction"))?;
         let drawn_cards = self.drain(drain_size..).collect();
 
         Ok(drawn_cards)

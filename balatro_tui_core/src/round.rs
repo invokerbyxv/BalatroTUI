@@ -12,17 +12,13 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use color_eyre::{
-    eyre::{bail, OptionExt},
-    Result,
-};
-
 use super::{
     blind::Blind,
     card::{Card, Sortable},
     deck::{Deck, DeckExt},
     scorer::Scorer,
 };
+use crate::error::{ArithmeticError, CoreError};
 
 /// Abstracts properties that remain persistent across played hands within a
 /// round.
@@ -68,11 +64,10 @@ pub struct Round {
 impl Round {
     /// Main entrypoint of the round. Once called, this method prepares the
     /// initial state of the round and initializes internal states.
-    pub fn start(&mut self) -> Result<()> {
+    pub fn start(&mut self) -> Result<(), CoreError> {
         self.hand = self
             .deck
-            .write()
-            .or_else(|err| bail!("Could not attain write lock for deck to start round: {err}."))?
+            .try_write()?
             .draw_random(self.properties.hand_size)?;
         self.hand.sort_by_rank();
 
@@ -81,12 +76,8 @@ impl Round {
 
     /// Draws new cards at the end of a hand played or discarded and adds
     /// previous cards to history drain.
-    fn deal_cards(&mut self, last_cards: &mut Vec<Card>) -> Result<()> {
-        let mut new_cards = self
-            .deck
-            .write()
-            .or_else(|err| bail!("Could not attain write lock for deck to deal cards: {err}."))?
-            .draw_random(last_cards.len())?;
+    fn deal_cards(&mut self, last_cards: &mut Vec<Card>) -> Result<(), CoreError> {
+        let mut new_cards = self.deck.try_write()?.draw_random(last_cards.len())?;
         self.history.append(last_cards);
         self.hand.append(&mut new_cards);
         self.hand.sort_by_rank();
@@ -95,20 +86,20 @@ impl Round {
     }
 
     /// Plays the selected cards and scores the hand.
-    pub fn play_hand(&mut self, played_cards: &mut Vec<Card>) -> Result<()> {
+    pub fn play_hand(&mut self, played_cards: &mut Vec<Card>) -> Result<(), CoreError> {
         if self.hands_count == 0 {
-            bail!("Attempted to play hand with all hands exhausted.");
+            return Err(CoreError::HandsExhaustedError);
         }
 
         self.hands_count = self
             .hands_count
             .checked_sub(1)
-            .ok_or_eyre("Subtraction operation overflowed")?;
+            .ok_or(ArithmeticError::Overflow("subtraction"))?;
 
         self.score = self
             .score
             .checked_add(Scorer::score_cards(played_cards)?)
-            .ok_or_eyre("Add operation overflowed")?;
+            .ok_or(ArithmeticError::Overflow("addition"))?;
 
         self.deal_cards(played_cards)?;
 
@@ -117,15 +108,15 @@ impl Round {
 
     /// Discards the selected cards and draws equal number of cards as the ones
     /// discarded.
-    pub fn discard_hand(&mut self, discarded_cards: &mut Vec<Card>) -> Result<()> {
+    pub fn discard_hand(&mut self, discarded_cards: &mut Vec<Card>) -> Result<(), CoreError> {
         if self.discards_count == 0 {
-            bail!("Attempted to discard hand with all discards exhausted.");
+            return Err(CoreError::DiscardsExhaustedError);
         }
 
         self.discards_count = self
             .discards_count
             .checked_sub(1)
-            .ok_or_eyre("Subtraction operation overflowed")?;
+            .ok_or(ArithmeticError::Overflow("subtraction"))?;
 
         self.deal_cards(discarded_cards)?;
 

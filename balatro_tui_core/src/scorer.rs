@@ -4,10 +4,13 @@
 //! decks as well with [`ScoringHand::FlushFive`], [`ScoringHand::FlushHouse`]
 //! and [`ScoringHand::FiveOfAKind`].
 
-use color_eyre::{eyre::OptionExt, Result};
 use strum::{Display, EnumCount, EnumIter, EnumProperty, EnumString, IntoStaticStr};
 
 use super::card::{Card, Rank, Sortable};
+use crate::{
+    enum_property_ext::EnumPropertyExt,
+    error::{ArithmeticError, ScorerError, StrumError},
+};
 
 /// [`ScoringHand`] represents which kind of hand is made when playing a set of
 /// cards.
@@ -181,14 +184,12 @@ pub struct Scorer;
 impl Scorer {
     /// Returns chips and multiplier for a [`ScoringHand`].
     #[inline]
-    pub fn get_chips_and_multiplier(scoring_hand: ScoringHand) -> Result<(usize, usize)> {
+    pub fn get_chips_and_multiplier(
+        scoring_hand: ScoringHand,
+    ) -> Result<(usize, usize), StrumError> {
         Ok((
-            str::parse(scoring_hand.get_str("chips").ok_or_eyre(format!(
-                "Chips could not be fetched for scoring hand: {scoring_hand}."
-            ))?)?,
-            str::parse(scoring_hand.get_str("multiplier").ok_or_eyre(format!(
-                "Multiplier could not be fetched for scoring hand: {scoring_hand}."
-            ))?)?,
+            scoring_hand.get_int_property("chips")?,
+            scoring_hand.get_int_property("multiplier")?,
         ))
     }
 
@@ -258,7 +259,9 @@ impl Scorer {
         clippy::indexing_slicing,
         reason = "Refactor: Current implementation guarantees index accesses are safe, but this can be refactored."
     )]
-    pub fn get_scoring_hand(cards: &[Card]) -> Result<(Option<ScoringHand>, Vec<Rank>)> {
+    pub fn get_scoring_hand(
+        cards: &[Card],
+    ) -> Result<(Option<ScoringHand>, Vec<Rank>), ScorerError> {
         let sorted_cards = cards.sorted_by_rank();
         let suit_groups = sorted_cards.grouped_by_suit();
         let rank_groups = sorted_cards.grouped_by_rank();
@@ -356,27 +359,28 @@ impl Scorer {
     }
 
     /// Score played cards and return the computed score.
-    pub fn score_cards(cards: &[Card]) -> Result<usize> {
+    pub fn score_cards(cards: &[Card]) -> Result<usize, ScorerError> {
         let (scoring_hand, scored_ranks) = Self::get_scoring_hand(cards)?;
-        let (base_chips, multiplier) = Self::get_chips_and_multiplier(
-            scoring_hand.ok_or_eyre("Attempted to score with no cards.")?,
-        )?;
+        let (base_chips, multiplier) =
+            Self::get_chips_and_multiplier(scoring_hand.ok_or(ScorerError::EmptyHandScoredError)?)?;
         let chips_increment = Self::score_chips_from_ranks(&scored_ranks)?;
-        (base_chips
+        Ok((base_chips
             .checked_add(chips_increment)
-            .ok_or_eyre("Add operation overflowed")?)
+            .ok_or(ArithmeticError::Overflow("addition"))?)
         .checked_mul(multiplier)
-        .ok_or_eyre("Multiplication operation overflowed")
+        .ok_or(ArithmeticError::Overflow("multiplication"))?)
     }
 
     /// Return total score from [`Rank`] from cards.
     #[inline]
-    fn score_chips_from_ranks(ranks: &[Rank]) -> Result<usize> {
+    fn score_chips_from_ranks(ranks: &[Rank]) -> Result<usize, ScorerError> {
         ranks.iter().try_fold(0, |acc, rank| {
             let score = rank.get_score()?;
-            score
-                .checked_add(acc)
-                .ok_or_eyre("Add operation overflowed")
+            Ok::<usize, ScorerError>(
+                score
+                    .checked_add(acc)
+                    .ok_or(ArithmeticError::Overflow("addition"))?,
+            )
         })
     }
 }
