@@ -172,6 +172,10 @@ impl Game {
     /// Draw loop for game state
     ///
     /// Runs every tick provided by the rendering interface.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Refactor: Create CoreRenderer structs to render core widgets."
+    )]
     fn draw(&mut self, frame: &mut Frame<'_>, area: Rect) -> Result<()> {
         // Prepare variables
         // TODO: Update only when a card is selected/deselected.
@@ -214,6 +218,8 @@ impl Game {
         ])
         .flex(Flex::Center)
         .areas(meta_area.inner(Margin::new(1, 0)));
+        let [_, deck_area] =
+            Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(play_area);
 
         // Render containers
         frame.render_widget(
@@ -273,10 +279,6 @@ impl Game {
                 round: self.run.round.properties.round_number,
             },
         );
-
-        let [_, deck_area] =
-            Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(play_area);
-
         frame.render_stateful_widget(
             CardListWidget::new(),
             deck_area,
