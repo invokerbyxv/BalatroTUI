@@ -161,7 +161,7 @@ impl SelectableList for CardListWidgetState {
     fn select(&mut self) -> Result<bool, WidgetError> {
         if self
             .selection_limit
-            .is_some_and(|limit| limit < self.selected.len())
+            .is_some_and(|limit| limit <= self.selected.len())
         {
             return Ok(false);
         }
