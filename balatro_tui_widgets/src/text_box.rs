@@ -57,6 +57,8 @@ use ratatui::{
 /// ```
 #[derive(Clone, Debug, Default)]
 pub struct TextBoxWidget<'widget> {
+    /// Padding for content inside [`TextBoxWidget`]
+    padding: u16,
     /// Optional [`Block`] widget that surrounds the content.
     border_block: Option<Block<'widget>>,
     /// Overridable constraints for aligning content.
@@ -82,6 +84,7 @@ impl<'widget> TextBoxWidget<'widget> {
         Vec<Line<'widget>>: From<C>,
     {
         TextBoxWidget {
+            padding: 1,
             border_block: None,
             constraints: None,
             content: content.into(),
@@ -152,6 +155,14 @@ impl<'widget> TextBoxWidget<'widget> {
         self
     }
 
+    /// Update the padding and return the [`TextBoxWidget`] instance.
+    #[must_use = "Text box widget builder returned instance must be used."]
+    #[inline]
+    pub const fn padding(mut self, padding: u16) -> Self {
+        self.padding = padding;
+        self
+    }
+
     /// Update the title of the block for the text box and return the
     /// [`TextBoxWidget`] instance. If a [`Self::border_block`] is not set, this
     /// property is ignored when rendering.
@@ -177,7 +188,7 @@ impl Widget for TextBoxWidget<'_> {
             }
 
             border_block.render(area, buf);
-            area.inner(Margin::new(1, 1))
+            area.inner(Margin::new(self.padding, 1))
         } else {
             area
         };
