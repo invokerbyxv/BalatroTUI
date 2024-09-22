@@ -1,6 +1,6 @@
 //! This module provides error definitions for this crate.
 
-use std::sync::{MutexGuard, TryLockError};
+use std::sync::{RwLockReadGuard, TryLockError};
 
 use thiserror::Error;
 
@@ -37,8 +37,8 @@ pub enum WidgetError {
     WidgetStateLockError(String),
 }
 
-impl<'guard, T> From<TryLockError<MutexGuard<'guard, T>>> for WidgetError {
-    fn from(source: TryLockError<MutexGuard<'guard, T>>) -> Self {
+impl<'guard, T> From<TryLockError<RwLockReadGuard<'guard, T>>> for WidgetError {
+    fn from(source: TryLockError<RwLockReadGuard<'guard, T>>) -> Self {
         Self::WidgetStateLockError(format!("{source:?}"))
     }
 }

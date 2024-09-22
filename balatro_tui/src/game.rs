@@ -8,7 +8,7 @@
 use std::{
     num::NonZeroUsize,
     str::FromStr,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, RwLock},
 };
 
 use balatro_tui_core::{
@@ -107,7 +107,7 @@ impl Game {
                     blind: Blind::Small,
                     deck: Arc::clone(&deck),
                     discards_count: max_discards,
-                    hand: vec![],
+                    hand: Arc::new(RwLock::new(vec![])),
                     hands_count: max_hands,
                     history: vec![],
                     properties: round_properties,
@@ -138,7 +138,7 @@ impl Game {
 
         // Cached card state
         self.card_list_widget_state = Some(
-            CardListWidgetState::from(Arc::from(Mutex::from(self.run.round.hand.clone())))
+            CardListWidgetState::from(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand))
                 .selection_limit(Some(MAXIMUM_SELECTABLE_CARDS))?,
         );
 
@@ -176,13 +176,19 @@ impl Game {
         // Prepare variables
         // TODO: Update only when a card is selected/deselected.
         let scoring_hand_opt = Scorer::get_scoring_hand(
-            &self.run.round.hand.peek_at_index_set(
-                &self
-                    .card_list_widget_state
-                    .as_ref()
-                    .ok_or_eyre("Card list widget state not initialized yet.")?
-                    .selected,
-            )?,
+            &self
+                .run
+                .round
+                .hand
+                .try_read()
+                .or_else(|err| bail!("Could not attain read lock for hand: {err}."))?
+                .peek_at_index_set(
+                    &self
+                        .card_list_widget_state
+                        .as_ref()
+                        .ok_or_eyre("Card list widget state not initialized yet.")?
+                        .selected,
+                )?,
         )?
         .0;
         let (chips, multiplier) = if let Some(scoring_hand) = scoring_hand_opt {
@@ -268,8 +274,6 @@ impl Game {
             },
         );
 
-        //////////////////////////////////////////////////////////////////////////
-
         let [_, deck_area] =
             Layout::vertical([Constraint::Fill(1), Constraint::Length(10)]).areas(play_area);
 
@@ -304,34 +308,46 @@ impl Game {
                 //////////////////////////////////////////////////////////////////////////
                 KeyCode::Enter => {
                     if self.run.round.hands_count != 0 {
-                        let mut selected = self.run.round.hand.drain_from_index_set(
-                            &self
-                                .card_list_widget_state
-                                .as_ref()
-                                .ok_or_eyre("Card list widget state not initialized yet.")?
-                                .selected,
-                        )?;
+                        let mut selected = self
+                            .run
+                            .round
+                            .hand
+                            .try_write()
+                            .or_else(|err| bail!("Could not attain read lock for hand: {err}."))?
+                            .drain_from_index_set(
+                                &self
+                                    .card_list_widget_state
+                                    .as_ref()
+                                    .ok_or_eyre("Card list widget state not initialized yet.")?
+                                    .selected,
+                            )?;
                         self.run.round.play_hand(&mut selected)?;
                         self.card_list_widget_state
                             .as_mut()
                             .ok_or_eyre("Card list widget state not initialized yet.")?
-                            .set_cards(Arc::from(Mutex::from(self.run.round.hand.clone())));
+                            .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
                     }
                 }
                 KeyCode::Char('x') => {
                     if self.run.round.discards_count != 0 {
-                        let mut selected = self.run.round.hand.drain_from_index_set(
-                            &self
-                                .card_list_widget_state
-                                .as_ref()
-                                .ok_or_eyre("Card list widget state not initialized yet.")?
-                                .selected,
-                        )?;
+                        let mut selected = self
+                            .run
+                            .round
+                            .hand
+                            .try_write()
+                            .or_else(|err| bail!("Could not attain write lock for hand: {err}."))?
+                            .drain_from_index_set(
+                                &self
+                                    .card_list_widget_state
+                                    .as_ref()
+                                    .ok_or_eyre("Card list widget state not initialized yet.")?
+                                    .selected,
+                            )?;
                         self.run.round.discard_hand(&mut selected)?;
                         self.card_list_widget_state
                             .as_mut()
                             .ok_or_eyre("Card list widget state not initialized yet.")?
-                            .set_cards(Arc::from(Mutex::from(self.run.round.hand.clone())));
+                            .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
                     }
                 }
                 //////////////////////////////////////////////////////////////////////////

@@ -55,7 +55,7 @@ pub struct Round {
     pub score: usize,
     // TODO: Remove pub access modifier wherever possible to constrict visibility
     /// An internal state for handling the hover and selection of cards in hand.
-    pub hand: Deck,
+    pub hand: Arc<RwLock<Deck>>,
     /// A drainage for played cards; to be flushed into the main deck at the end
     /// of the round.
     pub history: Deck,
@@ -65,11 +65,12 @@ impl Round {
     /// Main entrypoint of the round. Once called, this method prepares the
     /// initial state of the round and initializes internal states.
     pub fn start(&mut self) -> Result<(), CoreError> {
-        self.hand = self
-            .deck
-            .try_write()?
-            .draw_random(self.properties.hand_size)?;
-        self.hand.sort_by_rank();
+        self.hand = Arc::from(RwLock::from(
+            self.deck
+                .try_write()?
+                .draw_random(self.properties.hand_size)?,
+        ));
+        self.hand.try_write()?.sort_by_rank();
 
         Ok(())
     }
@@ -79,8 +80,8 @@ impl Round {
     fn deal_cards(&mut self, last_cards: &mut Vec<Card>) -> Result<(), CoreError> {
         let mut new_cards = self.deck.try_write()?.draw_random(last_cards.len())?;
         self.history.append(last_cards);
-        self.hand.append(&mut new_cards);
-        self.hand.sort_by_rank();
+        self.hand.try_write()?.append(&mut new_cards);
+        self.hand.try_write()?.sort_by_rank();
 
         Ok(())
     }
