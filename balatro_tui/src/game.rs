@@ -323,11 +323,16 @@ impl Game {
                                     .ok_or_eyre("Card list widget state not initialized yet.")?
                                     .selected,
                             )?;
-                        self.run.round.play_hand(&mut selected)?;
-                        self.card_list_widget_state
-                            .as_mut()
-                            .ok_or_eyre("Card list widget state not initialized yet.")?
-                            .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
+
+                            if selected.is_empty() {
+                                return Ok(());
+                            }
+
+                            self.run.round.play_hand(&mut selected)?;
+                            self.card_list_widget_state
+                                .as_mut()
+                                .ok_or_eyre("Card list widget state not initialized yet.")?
+                                .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
                     }
                 }
                 KeyCode::Char('x') => {

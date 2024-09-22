@@ -56,7 +56,7 @@ pub enum ScorerError {
     AnteExceeded(usize),
 
     /// Provides conversion from [`ArithmeticError`] to [`ScorerError`].
-    #[error("Arithmetic error occurred in scorer: {0:?}")]
+    #[error("Arithmetic error occurred in scorer")]
     ArithmeticError(#[from] ArithmeticError),
 
     /// Signifies that an empty hand (no cards) were passed in the scorer.
@@ -64,7 +64,7 @@ pub enum ScorerError {
     EmptyHandScoredError,
 
     /// Provides conversion from [`StrumError`] to [`ScorerError`].
-    #[error("Error occurred in parsing enum: {0:?}")]
+    #[error("Error occurred in parsing enum")]
     StrumError(#[from] StrumError),
 }
 
@@ -86,15 +86,15 @@ pub enum CoreError {
     HandsExhaustedError,
 
     /// Provides conversion from [`ArithmeticError`] to [`ScorerError`].
-    #[error("Arithmetic error occurred in scorer: {0:?}")]
+    #[error("Arithmetic error occurred in core")]
     ArithmeticError(#[from] ArithmeticError),
 
     /// Provides conversion from [`ScorerError`] to [`ScorerError`].
-    #[error("Error occurred in scorer: {0:?}")]
+    #[error("Scoring error occurred in scorer")]
     ScorerError(#[from] ScorerError),
 
     /// Provides conversion from [`StrumError`] to [`ScorerError`].
-    #[error("Error occurred in parsing enum: {0:?}")]
+    #[error("Strum error occurred in parsing enum")]
     StrumError(#[from] StrumError),
 }
 

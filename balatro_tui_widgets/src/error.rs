@@ -17,7 +17,7 @@ pub enum ArithmeticError {
 #[derive(Clone, Debug, Error)]
 pub enum WidgetError {
     /// Provides conversion from [`ArithmeticError`] to [`WidgetError`].
-    #[error("Arithmetic error occurred in scorer: {0:?}")]
+    #[error("Arithmetic error occurred in widget")]
     ArithmeticError(#[from] ArithmeticError),
 
     /// Signifies that the selection limit has overflown the source container
@@ -33,7 +33,7 @@ pub enum WidgetError {
 
     /// Signifies inability to acquire write lock on shared widget state. This
     /// should result in immediate exit and cleanup.
-    #[error("Could not acquire write lock on widget state: {0:?}")]
+    #[error("Could not acquire write lock on widget state")]
     WidgetStateLockError(String),
 }
 
