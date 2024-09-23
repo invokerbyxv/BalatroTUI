@@ -12,6 +12,26 @@ use crate::{
     error::{ArithmeticError, ScorerError, StrumError},
 };
 
+/// Bit masks for scoring a straight.
+///
+/// 0th mask represents a high ace straight, ie, A-K-Q-J-10
+/// 1st mask represents a low ace straight, ie, A-2-3-4-5
+///
+/// <div class="warning">Straight scoring operation relies on consistency of
+/// this constant and thus must not be changed</div>
+const STRAIGHT_BIT_MASKS: [u16; 10] = [
+    0b0001_1110_0000_0001,
+    0b0000_0000_0001_1111,
+    0b0000_0000_0011_1110,
+    0b0000_0000_0111_1100,
+    0b0000_0000_1111_1000,
+    0b0000_0001_1111_0000,
+    0b0000_0011_1110_0000,
+    0b0000_0111_1100_0000,
+    0b0000_1111_1000_0000,
+    0b0001_1111_0000_0000,
+];
+
 /// [`ScoringHand`] represents which kind of hand is made when playing a set of
 /// cards.
 ///
@@ -195,63 +215,28 @@ impl Scorer {
 
     /// Tests for a straight in a slice of [`Card`] and returns a
     /// [`StraightTestReport`].
-    #[expect(
-        clippy::unwrap_used,
-        reason = "Refactor: Remove this unwrap call once migrated to bit-mask based straight detection."
-    )]
     fn test_straight(cards: &[Card]) -> Option<StraightTestReport> {
-        let has_ace = cards.iter().any(|card| card.rank == Rank::Ace);
-        let mut ranks_without_ace = cards
+        let ranks = cards.iter().map(|card| card.rank).collect::<Vec<_>>();
+        let rank_bit_mask = ranks
             .iter()
-            .map(|card| card.rank)
-            .filter(|rank| rank != &Rank::Ace)
-            .collect::<Vec<_>>();
+            .fold(0, |bit_mask, rank| bit_mask | (1 << (*rank as usize)));
 
-        let comparator = ranks_without_ace
+        let is_straight = STRAIGHT_BIT_MASKS
             .iter()
-            .map(|&rank| {
-                ranks_without_ace
-                    .first()
-                    .map(|&first_rank| first_rank.distance(&rank).unwrap())
-            })
-            .collect::<Option<Vec<_>>>()?;
+            .any(|matcher| matcher == &rank_bit_mask);
 
-        if comparator.len() < 4 {
-            return None;
-        }
+        let high_ace = if rank_bit_mask == STRAIGHT_BIT_MASKS[0] {
+            Some(true)
+        } else if rank_bit_mask == STRAIGHT_BIT_MASKS[1] {
+            Some(false)
+        } else {
+            None
+        };
 
-        // TODO: Convert to bitwise scoring that will hold true for more than five
-        // cards.
-        if comparator.eq(&[0, 1, 2, 3, 4]) {
-            return Some(StraightTestReport {
-                high_ace: None,
-                scored_ranks: ranks_without_ace,
-            });
-        }
-
-        let is_partial_straight = comparator.eq(&[0, 1, 2, 3]);
-        let is_low_straight =
-            has_ace && is_partial_straight && cards.iter().any(|card| card.rank == Rank::Two);
-        let is_high_straight =
-            has_ace && is_partial_straight && cards.iter().any(|card| card.rank == Rank::King);
-
-        if is_low_straight {
-            ranks_without_ace.push(Rank::Ace);
-            return Some(StraightTestReport {
-                high_ace: Some(false),
-                scored_ranks: ranks_without_ace,
-            });
-        }
-
-        if is_high_straight {
-            ranks_without_ace.insert(0, Rank::Ace);
-            return Some(StraightTestReport {
-                high_ace: Some(true),
-                scored_ranks: ranks_without_ace,
-            });
-        }
-
-        None
+        is_straight.then_some(StraightTestReport {
+            high_ace,
+            scored_ranks: ranks,
+        })
     }
 
     /// Returns [`ScoringHand`] for played cards.
