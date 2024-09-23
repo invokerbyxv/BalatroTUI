@@ -65,9 +65,6 @@ pub struct Game {
     /// An instance of a [`Run`]. The run is the actual handler for most
     /// operations. [`Game`] simply forwards the requests to [`Run`] to handle.
     run: Run,
-    /// A boolean flag denoting whether the game should send out shutdown
-    /// signal.
-    should_quit: bool,
     /// A cached card list widget state. This caching is required for showing
     /// selection and hovering for [`CardListWidget`].
     card_list_widget_state: Option<CardListWidgetState>,
@@ -115,7 +112,6 @@ impl Game {
                 upcoming_round_number: NonZeroUsize::new(1)
                     .ok_or_eyre("Could not create upcoming round number")?,
             },
-            should_quit: false,
             card_list_widget_state: None,
         })
     }
@@ -130,7 +126,7 @@ impl Game {
         tui.enter()?;
 
         // Spawn EventHandler
-        let mut events = EventHandler::new(TICK_RATE);
+        let mut event_handler = EventHandler::new(TICK_RATE);
 
         // Start a run
         self.run.start()?;
@@ -143,21 +139,28 @@ impl Game {
 
         // Draw loop
         loop {
-            self.handle_events(events.next().await?)?;
+            let mut send_result: Result<()> = Ok(());
 
-            let mut inner_result: Result<()> = Ok(());
+            let continue_game = self
+                .handle_events(event_handler.next().await?, |event: Event| {
+                    send_result = event_handler.send_event(event)
+                })?;
+
+            send_result?;
+
+            let mut draw_result: Result<()> = Ok(());
 
             _ = tui
                 .draw(|frame| {
-                    inner_result = self
+                    draw_result = self
                         .draw(frame, frame.area())
                         .wrap_err("Could not draw game on the given frame.");
                 })
                 .wrap_err("Could not draw on Tui buffer.")?;
 
-            inner_result?;
+            draw_result?;
 
-            if self.should_quit {
+            if !continue_game {
                 break;
             }
         }
@@ -294,7 +297,24 @@ impl Game {
 
         match self.run.run_state {
             RunState::Running => (),
-            RunState::Finished(win) => if win { frame.render_stateful_widget(GameOverWidget::new(), splash_state_area, &mut (self.run.round.properties.round_number, self.run.round.properties.ante)) } else { frame.render_stateful_widget(WinScreenWidget::new(), splash_state_area, &mut self.run.money) }
+            RunState::Finished(win) => {
+                if win {
+                    frame.render_stateful_widget(
+                        GameOverWidget::new(),
+                        splash_state_area,
+                        &mut (
+                            self.run.round.properties.round_number,
+                            self.run.round.properties.ante,
+                        ),
+                    )
+                } else {
+                    frame.render_stateful_widget(
+                        WinScreenWidget::new(),
+                        splash_state_area,
+                        &mut self.run.money,
+                    )
+                }
+            }
         }
 
         Ok(())
@@ -302,7 +322,13 @@ impl Game {
 
     // TODO: Split and move into separate event handler + render traits.
     /// Centralized event handler working on state
-    fn handle_events(&mut self, event: Event) -> Result<()> {
+    ///
+    /// Returns a [`Result<bool>`] where the boolean value indicates whether to
+    /// continue the game loop.
+    fn handle_events<S>(&mut self, event: Event, send: S) -> Result<bool>
+    where
+        S: FnOnce(Event),
+    {
         #[expect(
             clippy::wildcard_enum_match_arm,
             reason = "Intended: Unused events may skip implementation as required."
@@ -334,11 +360,11 @@ impl Game {
             Event::Key(key_event) => match key_event.code {
                 // Game
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    self.should_quit = true;
+                    send(Event::Exit);
                 }
                 KeyCode::Char('c' | 'C') => {
                     if key_event.modifiers == KeyModifiers::CONTROL {
-                        self.should_quit = true;
+                        send(Event::Exit);
                     }
                 }
                 // Round
@@ -359,7 +385,7 @@ impl Game {
                             )?;
 
                         if selected.is_empty() {
-                            return Ok(());
+                            return Ok(true);
                         }
 
                         self.run.round.play_hand(&mut selected)?;
@@ -423,10 +449,11 @@ impl Game {
                     bail!("Terminal size was less than required to render game.");
                 }
             }
+            Event::Exit => return Ok(false),
             _ => (),
         }
 
-        Ok(())
+        Ok(true)
     }
 }
 

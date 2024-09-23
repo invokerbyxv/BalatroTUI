@@ -17,7 +17,8 @@ pub enum RunState {
     /// Represents that the run is ongoing
     #[default]
     Running,
-    /// Represents that the run is over. If the run was won, variant value is set to true, else false
+    /// Represents that the run is over. If the run was won, variant value is
+    /// set to true, else false
     Finished(bool),
 }
 

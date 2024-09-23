@@ -35,7 +35,6 @@ pub enum Event {
     /// [`Event::Resize`] event is sent when the event-accepting interface is
     /// resized. Use this for recomputing render requirements.
     Resize(u16, u16),
-    // TODO: Use Exit event instead of should_quit boolean flag in game
     /// [`Event::Exit`] event is the last event sent automatically by the event
     /// handler. Use this for gracefully exiting the game loop.
     Exit,
@@ -80,6 +79,11 @@ impl EventHandler {
             handler: Some(handler),
             cancellation_token,
         }
+    }
+
+    /// Send an event to the event handler
+    pub fn send_event(&mut self, event: Event) -> Result<()> {
+        Ok(self.sender.send(event)?)
     }
 
     /// Event handler future to be spawned as a tokio task.
@@ -131,9 +135,6 @@ impl EventHandler {
             };
         }
     }
-
-    // TODO: Handle all errors using single interceptor point. Create custom errors
-    // for handling different error/panic types.
 
     /// Sends the next asynchronous [`Event`] instance.
     ///
