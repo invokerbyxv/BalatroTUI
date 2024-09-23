@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Layout, Rect},
@@ -11,12 +13,12 @@ use super::text_box::TextBoxWidget;
 const SCORER_PREVIEW_CONTENT_HEIGHT: u16 = 10;
 
 /// Render state for [`ScorerPreviewWidget`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ScorerPreviewWidgetState {
     /// Number of chips counted for the scoring hand.
     pub chips: usize,
     /// Level of the scored hand.
-    pub level: usize,
+    pub level: NonZeroUsize,
     /// Multiplier for the scoring hand.
     pub multiplier: usize,
     /// Text content representing the scoring hand. If [`None`],
@@ -30,6 +32,7 @@ pub struct ScorerPreviewWidgetState {
 /// [`Self::new()`] method.
 ///
 /// ```
+/// # use std::num::NonZeroUsize;
 /// # use ratatui::{buffer::Buffer, layout::Rect, prelude::StatefulWidget};
 /// # use balatro_tui_core::scorer::ScoringHand;
 /// # use balatro_tui_widgets::{ScorerPreviewWidget, ScorerPreviewWidgetState};
@@ -37,7 +40,7 @@ pub struct ScorerPreviewWidgetState {
 /// let mut buffer = Buffer::empty(area);
 /// let mut cards = ScorerPreviewWidgetState {
 ///     chips: 10,
-///     level: 2,
+///     level: NonZeroUsize::new(2).unwrap(),
 ///     multiplier: 5,
 ///     scoring_hand_text: Some(ScoringHand::FourOfAKind.to_string()),
 /// };
@@ -46,13 +49,14 @@ pub struct ScorerPreviewWidgetState {
 /// ```
 ///
 /// ```
+/// # use std::num::NonZeroUsize;
 /// # use ratatui::{buffer::Buffer, layout::Rect, prelude::StatefulWidget};
 /// # use balatro_tui_widgets::{ScorerPreviewWidget, ScorerPreviewWidgetState};
 /// let area = Rect::new(0, 0, 100, 100);
-/// let buffer = Buffer::empty(area);
-/// let cards = ScorerPreviewWidgetState {
+/// let mut buffer = Buffer::empty(area);
+/// let mut cards = ScorerPreviewWidgetState {
 ///     chips: 10,
-///     level: 2,
+///     level: NonZeroUsize::new(2).unwrap(),
 ///     multiplier: 5,
 ///     scoring_hand_text: None,
 /// };

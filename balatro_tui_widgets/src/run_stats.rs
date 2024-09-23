@@ -33,6 +33,7 @@ pub struct RunStatsWidgetState {
 /// [`Self::new()`] method.
 ///
 /// ```
+/// # use std::num::NonZeroUsize;
 /// # use ratatui::{buffer::Buffer, layout::Rect, prelude::StatefulWidget};
 /// # use balatro_tui_widgets::{RunStatsWidgetState, RunStatsWidget};
 /// let area = Rect::new(0, 0, 100, 100);
@@ -41,8 +42,8 @@ pub struct RunStatsWidgetState {
 ///     hands: 3,
 ///     discards: 3,
 ///     money: 20,
-///     ante: 2,
-///     round: 5,
+///     ante: NonZeroUsize::new(2).unwrap(),
+///     round: NonZeroUsize::new(5).unwrap(),
 /// };
 ///
 /// RunStatsWidget::new().render(area, &mut buffer, &mut state);

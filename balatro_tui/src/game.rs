@@ -271,7 +271,8 @@ impl Game {
             scoring_area.inner(Margin::new(1, 1)),
             &mut ScorerPreviewWidgetState {
                 chips,
-                level: 1,
+                level: NonZeroUsize::new(1)
+                    .ok_or_eyre("Unable to create a non zero usize for level")?,
                 multiplier,
                 scoring_hand_text: scoring_hand_opt.map(|scoring_hand| scoring_hand.to_string()),
             },

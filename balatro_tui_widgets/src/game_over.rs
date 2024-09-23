@@ -18,12 +18,14 @@ const GAME_OVER_CONTENT_WIDTH: u16 = 40;
 /// [`Self::new()`] method.
 ///
 /// ```
-/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::Widget, style::Color, text::Line};
+/// # use std::num::NonZeroUsize;
+/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::StatefulWidget, style::Color, text::Line};
 /// # use balatro_tui_widgets::GameOverWidget;
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
+/// let (mut round, mut ante) = (NonZeroUsize::new(5).unwrap(), NonZeroUsize::new(2).unwrap());
 ///
-/// GameOverWidget::new().render(area, &mut buffer, (2, 5));
+/// GameOverWidget::new().render(area, &mut buffer, &mut (round, ante));
 /// ```
 #[derive(Copy, Clone, Debug, Default)]
 pub struct GameOverWidget;

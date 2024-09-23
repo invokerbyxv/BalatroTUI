@@ -16,12 +16,13 @@ const WIN_SCREEN_CONTENT_WIDTH: u16 = 40;
 /// [`Self::new()`] method.
 ///
 /// ```
-/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::Widget, style::Color, text::Line};
+/// # use std::num::NonZeroUsize;
+/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::StatefulWidget, style::Color, text::Line};
 /// # use balatro_tui_widgets::WinScreenWidget;
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
 ///
-/// WinScreenWidget::new().render(area, &mut buffer, (2, 5));
+/// WinScreenWidget::new().render(area, &mut buffer, &mut 40);
 /// ```
 #[derive(Copy, Clone, Debug, Default)]
 pub struct WinScreenWidget;
