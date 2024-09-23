@@ -12,10 +12,6 @@ use strum::IntoEnumIterator;
 use super::card::{Card, Rank, Suit};
 use crate::error::{ArithmeticError, CoreError};
 
-// TODO: Use dynamic trait switching to achieve suit and rank sorting. Feed the
-// impl directly to card instead of MultiSortable.
-// TODO: Impl default traits for all structs.
-
 /// Lazy initializer for default deck.
 ///
 /// More decks can be added using lazy initialization with use of

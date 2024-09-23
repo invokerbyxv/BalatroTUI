@@ -59,7 +59,7 @@ pub const MAXIMUM_SELECTABLE_CARDS: usize = 5;
 // TODO: Move cached widget instances into `GameWidgetCache` struct.
 /// [`Game`] struct holds the state for the running game, including [`Run`]
 /// surrounding states, that allow early closure of a run.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Game {
     /// An instance of a [`Run`]. The run is the actual handler for most
     /// operations. [`Game`] simply forwards the requests to [`Run`] to handle.

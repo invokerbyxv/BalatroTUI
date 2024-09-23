@@ -24,7 +24,7 @@ const WIN_SCREEN_CONTENT_WIDTH: u16 = 40;
 ///
 /// WinScreenWidget::new().render(area, &mut buffer, &mut 40);
 /// ```
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct WinScreenWidget;
 
 impl WinScreenWidget {

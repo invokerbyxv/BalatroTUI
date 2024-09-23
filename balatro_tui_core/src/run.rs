@@ -42,7 +42,7 @@ pub struct RunProperties {
 ///
 /// A single run is maintained from the point a deck is selected to the point of
 /// game over.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Run {
     /// Persistent properties for the run.
     pub properties: RunProperties,

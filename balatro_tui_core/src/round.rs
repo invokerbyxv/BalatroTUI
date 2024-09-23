@@ -36,7 +36,7 @@ pub struct RoundProperties {
 ///
 /// Once the round is over, this struct is destroyed and a new one is created
 /// when a blind is selected again.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Round {
     /// Persistent properties for the round.
     pub properties: RoundProperties,

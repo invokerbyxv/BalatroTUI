@@ -198,7 +198,7 @@ struct StraightTestReport {
 ///
 /// [`Scorer::score_cards`] is a wrapper that handles scoring for cards. It
 /// should satisfy most requirements.
-#[derive(Clone, Copy, Debug, Ord, PartialOrd, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Ord, PartialOrd, Eq, Hash, PartialEq)]
 pub struct Scorer;
 
 impl Scorer {
