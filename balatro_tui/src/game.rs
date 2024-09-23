@@ -16,12 +16,13 @@ use balatro_tui_core::{
     card::Card,
     deck::{Deck, DeckConstExt},
     round::{Round, RoundProperties},
-    run::{Run, RunProperties},
+    run::{Run, RunProperties, RunState},
     scorer::Scorer,
 };
 use balatro_tui_widgets::{
-    CardListWidget, CardListWidgetState, RoundInfoWidget, RoundScoreWidget, RunStatsWidget,
-    RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState, SelectableList,
+    CardListWidget, CardListWidgetState, GameOverWidget, RoundInfoWidget, RoundScoreWidget,
+    RunStatsWidget, RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState,
+    SelectableList, WinScreenWidget,
 };
 use bit_set::BitSet;
 use color_eyre::{
@@ -56,20 +57,17 @@ pub const TICK_RATE: u64 = 144;
 /// As per standard rules this is set to `5`.
 pub const MAXIMUM_SELECTABLE_CARDS: usize = 5;
 
+// TODO: Move cached widget instances into `GameWidgetCache` struct.
 /// [`Game`] struct holds the state for the running game, including [`Run`]
 /// surrounding states, that allow early closure of a run.
-#[expect(
-    clippy::partial_pub_fields,
-    reason = "Refactor: Move cached widget instances into `GameWidgetCache` struct."
-)]
 #[derive(Debug)]
 pub struct Game {
     /// An instance of a [`Run`]. The run is the actual handler for most
     /// operations. [`Game`] simply forwards the requests to [`Run`] to handle.
-    pub run: Run,
+    run: Run,
     /// A boolean flag denoting whether the game should send out shutdown
     /// signal.
-    pub should_quit: bool,
+    should_quit: bool,
     /// A cached card list widget state. This caching is required for showing
     /// selection and hovering for [`CardListWidget`].
     card_list_widget_state: Option<CardListWidgetState>,
@@ -101,6 +99,7 @@ impl Game {
         Ok(Self {
             run: Run {
                 deck: Arc::clone(&deck),
+                run_state: RunState::Running,
                 money: run_properties.starting_money,
                 properties: run_properties,
                 round: Round {
@@ -202,6 +201,12 @@ impl Game {
         };
 
         // Prepare areas
+        let mut splash_state_area = Layout::vertical([Constraint::Ratio(2, 3)])
+            .flex(Flex::Center)
+            .areas::<1>(area)[0];
+        splash_state_area = Layout::horizontal([Constraint::Ratio(2, 3)])
+            .flex(Flex::Center)
+            .areas::<1>(splash_state_area)[0];
         let [meta_area, play_area] =
             Layout::horizontal([Constraint::Percentage(25), Constraint::Fill(1)]).areas(area);
         let [
@@ -287,6 +292,11 @@ impl Game {
                 .ok_or_eyre("Card list widget state not initialized yet.")?,
         );
 
+        match self.run.run_state {
+            RunState::Running => (),
+            RunState::Finished(win) => if win { frame.render_stateful_widget(GameOverWidget::new(), splash_state_area, &mut (self.run.round.properties.round_number, self.run.round.properties.ante)) } else { frame.render_stateful_widget(WinScreenWidget::new(), splash_state_area, &mut self.run.money) }
+        }
+
         Ok(())
     }
 
@@ -298,7 +308,31 @@ impl Game {
             reason = "Intended: Unused events may skip implementation as required."
         )]
         match event {
+            Event::Tick => {
+                // TODO: Move to run instead
+                if self.run.round.hands_count == 0
+                    && self.run.round.score
+                        < self
+                            .run
+                            .round
+                            .blind
+                            .get_target_score(self.run.round.properties.ante)?
+                {
+                    self.run.run_state = RunState::Finished(false);
+                }
+
+                if self.run.round.score
+                    >= self
+                        .run
+                        .round
+                        .blind
+                        .get_target_score(self.run.round.properties.ante)?
+                {
+                    self.run.run_state = RunState::Finished(true);
+                }
+            }
             Event::Key(key_event) => match key_event.code {
+                // Game
                 KeyCode::Esc | KeyCode::Char('q') => {
                     self.should_quit = true;
                 }
@@ -307,7 +341,7 @@ impl Game {
                         self.should_quit = true;
                     }
                 }
-                //////////////////////////////////////////////////////////////////////////
+                // Round
                 KeyCode::Enter => {
                     if self.run.round.hands_count != 0 {
                         let mut selected = self
@@ -324,15 +358,15 @@ impl Game {
                                     .selected,
                             )?;
 
-                            if selected.is_empty() {
-                                return Ok(());
-                            }
+                        if selected.is_empty() {
+                            return Ok(());
+                        }
 
-                            self.run.round.play_hand(&mut selected)?;
-                            self.card_list_widget_state
-                                .as_mut()
-                                .ok_or_eyre("Card list widget state not initialized yet.")?
-                                .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
+                        self.run.round.play_hand(&mut selected)?;
+                        self.card_list_widget_state
+                            .as_mut()
+                            .ok_or_eyre("Card list widget state not initialized yet.")?
+                            .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
                     }
                 }
                 KeyCode::Char('x') => {
@@ -357,7 +391,7 @@ impl Game {
                             .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
                     }
                 }
-                //////////////////////////////////////////////////////////////////////////
+                // Deck/Card
                 KeyCode::Right => {
                     if let Some(state) = self.card_list_widget_state.as_mut() {
                         state.move_next()?;

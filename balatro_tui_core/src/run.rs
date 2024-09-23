@@ -11,6 +11,16 @@ use std::{
 use super::{deck::Deck, round::Round};
 use crate::error::CoreError;
 
+/// Tracks the active state of the run
+#[derive(Copy, Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+pub enum RunState {
+    /// Represents that the run is ongoing
+    #[default]
+    Running,
+    /// Represents that the run is over. If the run was won, variant value is set to true, else false
+    Finished(bool),
+}
+
 /// Persistent details about the run.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RunProperties {
@@ -35,13 +45,15 @@ pub struct RunProperties {
 pub struct Run {
     /// Persistent properties for the run.
     pub properties: RunProperties,
+    /// Holds the operational state of the run.
+    pub run_state: RunState,
     /// Current money held by the user.
     pub money: usize,
     /// Shared deck of cards across rounds. [`Run`] simply passes this on to the
     /// [`Round`] instance.
     pub deck: Arc<RwLock<Deck>>,
     // TODO: Make round container optional and generic to be replaced between RoundSelection,
-    // Round, Shop and GameOver
+    // Round, Shop
     /// An instance of a [`Round`].
     pub round: Round,
     /// Used to keep track of the last played [`Round`] number.
