@@ -194,7 +194,11 @@ impl Scorer {
     }
 
     /// Tests for a straight in a slice of [`Card`] and returns a
-    /// [`StraightTestReport`]
+    /// [`StraightTestReport`].
+    #[expect(
+        clippy::unwrap_used,
+        reason = "Refactor: Remove this unwrap call once migrated to bit-mask based straight detection."
+    )]
     fn test_straight(cards: &[Card]) -> Option<StraightTestReport> {
         let has_ace = cards.iter().any(|card| card.rank == Rank::Ace);
         let mut ranks_without_ace = cards
@@ -203,16 +207,12 @@ impl Scorer {
             .filter(|rank| rank != &Rank::Ace)
             .collect::<Vec<_>>();
 
-        #[expect(
-            clippy::arithmetic_side_effects,
-            reason = "False positive: Rank implements safe subtraction."
-        )]
         let comparator = ranks_without_ace
             .iter()
             .map(|&rank| {
                 ranks_without_ace
                     .first()
-                    .map(|&first_rank| first_rank - rank)
+                    .map(|&first_rank| first_rank.distance(&rank).unwrap())
             })
             .collect::<Option<Vec<_>>>()?;
 
@@ -263,8 +263,8 @@ impl Scorer {
         cards: &[Card],
     ) -> Result<(Option<ScoringHand>, Vec<Rank>), ScorerError> {
         let sorted_cards = cards.sorted_by_rank();
-        let suit_groups = sorted_cards.grouped_by_suit();
-        let rank_groups = sorted_cards.grouped_by_rank();
+        let suit_groups = sorted_cards.grouped_by_suit()?;
+        let rank_groups = sorted_cards.grouped_by_rank()?;
         let straight_test_result = Self::test_straight(&sorted_cards);
 
         if suit_groups.is_empty() || rank_groups.is_empty() {

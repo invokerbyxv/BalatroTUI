@@ -10,7 +10,6 @@ use std::{
     cmp::{Ordering, Reverse},
     collections::HashMap,
     fmt::{Display, Formatter, Result as FmtResult},
-    ops::{Add, Sub},
     str::FromStr,
 };
 
@@ -92,6 +91,7 @@ pub enum Suit {
 
 impl Suit {
     /// Returns deterministic display value for the rank.
+    #[inline]
     pub fn get_display(&self) -> String {
         self.get_str("display")
             .map_or_else(|| self.to_string(), Into::into)
@@ -153,6 +153,9 @@ impl Suit {
 /// Since, the cards are comparable values, [`Add`] and [`Sub`] implementations
 /// are provided for rank using their ordinal representation. `High Ace` must be
 /// considered by scoring implementation as it won't be wrapping.
+///
+/// <div class="warning">The rank ordinals are only used for internal use. For
+/// parsing use [`Rank::from_str()`] instead </div>
 #[derive(
     Clone,
     Copy,
@@ -170,7 +173,7 @@ impl Suit {
 pub enum Rank {
     /// Ace rank (A)
     #[strum(serialize = "A", serialize = "1", props(score = "10", display = "A"))]
-    Ace = 1,
+    Ace = 0,
     /// Two rank (2)
     #[strum(serialize = "2", props(score = "2"))]
     Two,
@@ -217,9 +220,19 @@ impl Rank {
     }
 
     /// Returns deterministic display value for the rank.
+    #[inline]
     pub fn get_display(&self) -> String {
         self.get_str("display")
             .map_or_else(|| self.to_string(), Into::into)
+    }
+
+    /// Finds the ordinal distance between two ranks.
+    #[inline]
+    pub fn distance(&self, other: &Self) -> Result<usize, ArithmeticError> {
+        Ok((*self as isize)
+            .checked_sub(*other as isize)
+            .ok_or(ArithmeticError::Overflow("subtraction"))?
+            .unsigned_abs())
     }
 }
 
@@ -240,29 +253,6 @@ impl Ord for Rank {
             return Ordering::Less;
         }
         (*self as usize).cmp(&(*other as usize))
-    }
-}
-
-impl Add for Rank {
-    type Output = usize;
-
-    #[inline]
-    fn add(self, rhs: Self) -> Self::Output {
-        (self as usize)
-            .checked_add(rhs as usize)
-            .ok_or(ArithmeticError::Overflow("addition"))
-            .unwrap()
-    }
-}
-
-impl Sub for Rank {
-    type Output = isize;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        (self as isize)
-            .checked_sub(rhs as isize)
-            .ok_or(ArithmeticError::Overflow("subtraction"))
-            .unwrap()
     }
 }
 
@@ -352,12 +342,12 @@ pub trait Sortable {
     /// sorts them in descending order based on the count, and returns the
     /// [`Vec<(Suit, usize)`]
     #[must_use = "Grouped suits must be used."]
-    fn grouped_by_suit(&self) -> Vec<(Suit, usize)>;
+    fn grouped_by_suit(&self) -> Result<Vec<(Suit, usize)>, ArithmeticError>;
     /// Groups the played cards by their [`Rank`], gets the count of each group,
     /// sorts them in descending order based on the count, and returns the
     /// [`Vec<(Rank, usize)`]
     #[must_use = "Grouped ranks must be used."]
-    fn grouped_by_rank(&self) -> Vec<(Rank, usize)>;
+    fn grouped_by_rank(&self) -> Result<Vec<(Rank, usize)>, ArithmeticError>;
 }
 
 impl Sortable for [Card] {
@@ -385,8 +375,9 @@ impl Sortable for [Card] {
         cards
     }
 
-    fn grouped_by_suit(&self) -> Vec<(Suit, usize)> {
-        let group = self
+    // TODO: Convert to use entry API once Try conversion handling is added
+    fn grouped_by_suit(&self) -> Result<Vec<(Suit, usize)>, ArithmeticError> {
+        Ok(self
             .iter()
             .fold(HashMap::new(), |mut groups, card| {
                 _ = groups
@@ -403,12 +394,11 @@ impl Sortable for [Card] {
             .into_iter()
             .sorted_by_key(|group| group.1)
             .rev()
-            .collect();
-        group
+            .collect())
     }
 
-    fn grouped_by_rank(&self) -> Vec<(Rank, usize)> {
-        let group = self
+    fn grouped_by_rank(&self) -> Result<Vec<(Rank, usize)>, ArithmeticError> {
+        Ok(self
             .iter()
             .fold(HashMap::new(), |mut groups, card| {
                 _ = groups
@@ -425,8 +415,7 @@ impl Sortable for [Card] {
             .into_iter()
             .sorted_by_key(|group| group.1)
             .rev()
-            .collect();
-        group
+            .collect())
     }
 }
 

@@ -82,6 +82,7 @@ impl EventHandler {
     }
 
     /// Send an event to the event handler
+    #[inline]
     pub fn send_event(&mut self, event: Event) -> Result<()> {
         self.sender
             .send(event)

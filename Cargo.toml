@@ -198,14 +198,13 @@ wildcard_enum_match_arm = "warn"
 missing_inline_in_public_items = "allow"
 as_conversions = "allow"
 min_ident_chars = "allow" # https://github.com/rust-lang/rust-clippy/issues/13396
-unwrap_used = "allow"
+unwrap_used = "warn"
 float_arithmetic = "allow"
 cast_precision_loss = "allow"
 
 # Move core to a lib crate and enable these lints
 module_name_repetitions = "allow"
 missing_errors_doc = "allow"
-pub_use = "allow"
 
 # Enable if moving to no_std
 std_instead_of_core = "allow"

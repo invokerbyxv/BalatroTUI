@@ -40,7 +40,6 @@ pub struct RoundProperties {
 pub struct Round {
     /// Persistent properties for the round.
     pub properties: RoundProperties,
-    // TODO: Rename to shoe.
     /// Shared deck of cards across rounds. Round will start by drawing random
     /// cards from this deck.
     pub deck: Arc<RwLock<Deck>>,
@@ -53,7 +52,6 @@ pub struct Round {
     pub hands_count: usize,
     /// Score accumulated in a round.
     pub score: usize,
-    // TODO: Remove pub access modifier wherever possible to constrict visibility
     /// An internal state for handling the hover and selection of cards in hand.
     pub hand: Arc<RwLock<Deck>>,
     /// A drainage for played cards; to be flushed into the main deck at the end

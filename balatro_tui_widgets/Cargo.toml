@@ -15,6 +15,13 @@ version.workspace = true
 [lints]
 workspace = true
 
+# Enable when overriding is added to cargo.
+#
+# [lints.clippy]
+# module_name_repetitions = "allow"
+# missing_errors_doc = "allow"
+# pub_use = "allow"
+
 [lib]
 doctest = true
 test = true

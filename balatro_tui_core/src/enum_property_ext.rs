@@ -25,6 +25,7 @@ where
     T: EnumProperty + ToString,
 {
     // TODO: Use get_str() when stabilized
+    #[inline]
     fn get_property(&self, property: &str) -> Result<&str, StrumError> {
         self.get_str(property)
             .ok_or_else(|| StrumError::PropertyNotFound {
@@ -34,6 +35,7 @@ where
     }
 
     // TODO: Use get_int() when stabilized
+    #[inline]
     fn get_int_property(&self, property: &str) -> Result<usize, StrumError> {
         Ok(str::parse::<usize>(self.get_property(property)?)?)
     }

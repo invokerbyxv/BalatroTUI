@@ -238,6 +238,10 @@ impl StatefulWidget for CardListWidget {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Cards
+        #[expect(
+            clippy::unwrap_used,
+            reason = "Intended: Read lock acquisition failure at this point should panic."
+        )]
         let cards = state.cards.try_read().unwrap();
 
         // Prepare areas

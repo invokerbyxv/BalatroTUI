@@ -99,6 +99,7 @@ pub enum CoreError {
 }
 
 impl<'guard, T> From<TryLockError<RwLockWriteGuard<'guard, T>>> for CoreError {
+    #[inline]
     fn from(source: TryLockError<RwLockWriteGuard<'guard, T>>) -> Self {
         Self::DeckLockError(format!("{source:?}"))
     }
