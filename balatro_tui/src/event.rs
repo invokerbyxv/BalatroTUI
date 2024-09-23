@@ -83,7 +83,9 @@ impl EventHandler {
 
     /// Send an event to the event handler
     pub fn send_event(&mut self, event: Event) -> Result<()> {
-        Ok(self.sender.send(event)?)
+        self.sender
+            .send(event)
+            .wrap_err("Failed to send message into the event handler sender")
     }
 
     /// Event handler future to be spawned as a tokio task.
@@ -151,7 +153,6 @@ impl EventHandler {
     /// [`Event::Exit`] event to gracefully exit the game loop.
     pub async fn stop(&mut self) -> Result<()> {
         self.cancellation_token.cancel();
-        self.sender.send(Event::Exit)?;
         if let Some(handle) = self.handler.take() {
             return handle
                 .await

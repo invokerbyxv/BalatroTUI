@@ -123,7 +123,7 @@ impl Game {
     pub async fn start(&mut self) -> Result<()> {
         // Enter TUI
         let mut tui = Tui::new()?;
-        tui.enter()?;
+        tui.enter().wrap_err("Error occurred while entering Tui")?;
 
         // Spawn EventHandler
         let mut event_handler = EventHandler::new(TICK_RATE);
@@ -152,9 +152,7 @@ impl Game {
 
             _ = tui
                 .draw(|frame| {
-                    draw_result = self
-                        .draw(frame, frame.area())
-                        .wrap_err("Could not draw game on the given frame.");
+                    draw_result = self.draw(frame, frame.area());
                 })
                 .wrap_err("Could not draw on Tui buffer.")?;
 
@@ -180,7 +178,6 @@ impl Game {
     )]
     fn draw(&mut self, frame: &mut Frame<'_>, area: Rect) -> Result<()> {
         // Prepare variables
-        // TODO: Update only when a card is selected/deselected.
         let scoring_hand_opt = Scorer::get_scoring_hand(
             &self
                 .run

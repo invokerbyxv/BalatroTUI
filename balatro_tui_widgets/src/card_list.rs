@@ -63,7 +63,7 @@ pub trait SelectableList {
 ///
 /// let list_state = CardListWidgetState::from(Arc::from(RwLock::from(cards)));
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct CardListWidgetState {
     /// Holds a atomic mutable reference to a [`Vec<Card>`].
     pub cards: Arc<RwLock<Vec<Card>>>,

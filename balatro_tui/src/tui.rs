@@ -1,8 +1,6 @@
 //! This module provides a [`Tui`] wrapper, implementing standard entry and
 //! exit procedures to prepare rendering on the terminal.
 
-// TODO: Convert this module to use color_eyre instead of panic and hook
-
 use std::{
     io::{stderr, Stderr},
     ops::{Deref, DerefMut},
@@ -10,7 +8,7 @@ use std::{
     process::exit,
 };
 
-use color_eyre::{config::HookBuilder, Result};
+use color_eyre::{config::HookBuilder, eyre::Context, Result};
 use crossterm::{
     cursor,
     event::{DisableMouseCapture, EnableMouseCapture},
@@ -27,14 +25,13 @@ pub struct Tui {
     pub(self) terminal: Terminal<Backend<Stderr>>,
 }
 
-// TODO: Use wrap_err wherever context needs to be added
-
 impl Tui {
     /// Creates new Tui instance with crossterm backend.
     #[inline]
     pub fn new() -> Result<Self> {
         Ok(Self {
-            terminal: Terminal::new(Backend::new(stderr()))?,
+            terminal: Terminal::new(Backend::new(stderr()))
+                .wrap_err("Unable to create a terminal instance using crossterm backend")?,
         })
     }
 
