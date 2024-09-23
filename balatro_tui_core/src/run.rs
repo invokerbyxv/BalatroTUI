@@ -53,8 +53,6 @@ pub struct Run {
     /// Shared deck of cards across rounds. [`Run`] simply passes this on to the
     /// [`Round`] instance.
     pub deck: Arc<RwLock<Deck>>,
-    // TODO: Make round container optional and generic to be replaced between RoundSelection,
-    // Round, Shop
     /// An instance of a [`Round`].
     pub round: Round,
     /// Used to keep track of the last played [`Round`] number.
@@ -69,5 +67,3 @@ impl Run {
         self.round.start()
     }
 }
-
-// TODO: Split/Flex all widgets in meta_area evenly.

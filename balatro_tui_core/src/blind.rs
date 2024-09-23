@@ -63,8 +63,6 @@ pub enum Blind {
     Boss(Bosses),
 }
 
-// TODO: Add power description in strum properties.
-
 /// Bosses are different blinds that can be randomly show up during a run as
 /// boss blind. Each boss has a unique associated power that plays out during
 /// the boss blind round.
@@ -146,7 +144,6 @@ impl Blind {
     #[inline]
     pub fn get_target_score(&self, ante: NonZeroUsize) -> Result<usize, ScorerError> {
         if ante.get() >= BLIND_BASE_AMOUNTS.len() {
-            // TODO: Implement endless mode blind base score calculation.
             return Err(ScorerError::AnteExceeded(ante.get()));
         }
 

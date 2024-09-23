@@ -35,9 +35,6 @@ pub trait SelectableList {
     fn blur(&mut self);
 }
 
-// TODO: Move unchanging items out of state for widgets.
-// TODO: Create macros for creating widgets.
-
 /// Render state for [`CardListWidget`].
 ///
 /// Holds a atomic mutable reference to a [`Vec<Card>`]. Tracks the current
@@ -69,7 +66,6 @@ pub struct CardListWidgetState {
     pub cards: Arc<RwLock<Vec<Card>>>,
     /// Cursor position over the [`Self::cards`].
     pub pos: Option<usize>,
-    // TODO: Use bit-mask for selected value over usize
     /// A cache of selected card indices.
     pub selected: BitSet,
     /// Optional limit defines the maximum cards that can be selected.
@@ -228,10 +224,6 @@ impl CardListWidget {
         Self {}
     }
 }
-
-// TODO: Add pub(crate) qualifications
-// TODO: Remove unused pub qualifications
-// TODO: Optimize card widget construction
 
 impl StatefulWidget for CardListWidget {
     type State = CardListWidgetState;

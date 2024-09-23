@@ -75,9 +75,6 @@ impl ScorerPreviewWidget {
     }
 }
 
-// TODO: Add custom errors if required.
-// TODO: Add const modifier to struct creation methods
-
 impl StatefulWidget for ScorerPreviewWidget {
     type State = ScorerPreviewWidgetState;
 
@@ -99,13 +96,10 @@ impl StatefulWidget for ScorerPreviewWidget {
 
         // Render widgets
         if let Some(hand) = state.scoring_hand_text.as_ref() {
-            // TODO: Add leveling system for scoring hand types
             TextBoxWidget::new([Line::from(format!("{} [lvl. {}]", hand, state.level)).centered()])
                 .constraints([Constraint::Length(1)])
                 .render(scoring_hand_text_area, buf);
         }
-        // TODO: Use big text to render chips, multiplier, scoring hand and multiply
-        // icon.
         TextBoxWidget::bordered([Line::from(state.chips.to_string()).centered()])
             .render(chips_area, buf);
         TextBoxWidget::new([Line::from("\u{d7}".to_owned()).centered()])

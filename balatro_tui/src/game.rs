@@ -46,8 +46,6 @@ use crate::{
     tui::Tui,
 };
 
-// TODO: Add compatibility with non-tui solution
-
 /// Tick rate at which the game runs/receives updates.
 pub const TICK_RATE: u64 = 144;
 
@@ -56,7 +54,6 @@ pub const TICK_RATE: u64 = 144;
 /// As per standard rules this is set to `5`.
 pub const MAXIMUM_SELECTABLE_CARDS: usize = 5;
 
-// TODO: Move cached widget instances into `GameWidgetCache` struct.
 /// [`Game`] struct holds the state for the running game, including [`Run`]
 /// surrounding states, that allow early closure of a run.
 #[derive(Clone, Debug)]
@@ -148,6 +145,7 @@ impl Game {
 
             send_result?;
 
+            self.handle_run_events(event)?;
             self.handle_round_events(event)?;
             self.handle_deck_events(event)?;
 
@@ -218,7 +216,6 @@ impl Game {
             scoring_area,
             run_stats_area,
         ] = Layout::vertical([
-            // TODO: Infer from content length
             Constraint::Length(15),
             Constraint::Length(9),
             Constraint::Length(12),
@@ -321,7 +318,6 @@ impl Game {
         Ok(())
     }
 
-    // TODO: Split and move into separate event handler + render traits.
     /// Event handler for handling game-specific input interface events.
     ///
     /// Returns a [`Result<bool>`] where the boolean value indicates whether to
@@ -335,29 +331,6 @@ impl Game {
             reason = "Intended: Unused events may skip implementation as required."
         )]
         match event {
-            Event::Tick => {
-                // TODO: Move to run instead
-                if self.run.round.hands_count == 0
-                    && self.run.round.score
-                        < self
-                            .run
-                            .round
-                            .blind
-                            .get_target_score(self.run.round.properties.ante)?
-                {
-                    self.run.run_state = RunState::Finished(false);
-                }
-
-                if self.run.round.score
-                    >= self
-                        .run
-                        .round
-                        .blind
-                        .get_target_score(self.run.round.properties.ante)?
-                {
-                    self.run.run_state = RunState::Finished(true);
-                }
-            }
             Event::Key(key_event) => match key_event.code {
                 KeyCode::Esc | KeyCode::Char('q') => {
                     send(Event::Exit);
@@ -374,12 +347,45 @@ impl Game {
                     bail!("Terminal size was less than required to render game.");
                 }
             }
-            Event::Mouse(_) => (),
             Event::Exit => return Ok(false),
+            _ => (),
         }
 
         Ok(true)
     }
+
+    /// Event handler for handling run-specific input interface events.
+    fn handle_run_events(&mut self, event: Event) -> Result<()> {
+        #[expect(
+            clippy::wildcard_enum_match_arm,
+            reason = "Intended: Unused events may skip implementation as required."
+        )]
+        if let Event::Tick = event {
+            if self.run.round.hands_count == 0
+                && self.run.round.score
+                    < self
+                        .run
+                        .round
+                        .blind
+                        .get_target_score(self.run.round.properties.ante)?
+            {
+                self.run.run_state = RunState::Finished(false);
+            }
+
+            if self.run.round.score
+                >= self
+                    .run
+                    .round
+                    .blind
+                    .get_target_score(self.run.round.properties.ante)?
+            {
+                self.run.run_state = RunState::Finished(true);
+            }
+        }
+
+        Ok(())
+    }
+
 
     /// Event handler for handling round-specific input interface events.
     fn handle_round_events(&mut self, event: Event) -> Result<()> {

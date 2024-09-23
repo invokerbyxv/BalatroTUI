@@ -1,0 +1,35 @@
+☐ Add compatibility with non-tui solution
+☐ Move cached widget instances into `GameWidgetCache` struct
+☐ Infer widget constraints from content length
+☐ Split and move `handle_game_events` into separate event handler + render traits
+☐ Rework panic handler to append issue template
+☐ Only enable backtrace on panic when RUSTBACKTRACE is set to 1
+☐ Add power description for `Bosses` enum in enum description to show on widget
+☐ Implement endless mode (ante calculation and bumping target scores)
+☐ Shuffle should be deterministic based on the seed (accept argument to enable true shuffle)
+☐ Use `get_str()` and `get_int()` from strum when stablized (https://github.com/Peternator7/strum/issues/313)
+☐ Remove `ScoreError::AnteExceeded` when infinite ante is implemented
+☐ Add animations to `Scorer`
+☐ Remove deep variable access, access depth on self should be always one-level
+☐ Make fields private for `Game`, `Run`, `Round`, etc
+☐ Make round container optional and generic to be replaced between `RoundSelection`, `Round` and `Shop` in `Run` struct
+☐ Only hold references to contained structs like `Run` and `Round`. It should be managed only at `Game` level (Arc<RwLock>)
+☐ Add more tests. Determine by coverage report.
+☐ Use `ratatui-image` for blind badge display instead of canvas.
+☐ Use `&'a str` for state variables in widgets instead of `String`. Use `Arc` for shared usage if required.
+☐ Add features to enable conditional compilation for:
+    `no-std` => Use `core` and `alloc` if enabled, `std` otherwise
+    `tokio` => Use `tokio` if enabled, `mpsc` otherwise
+    `multithreading` => Use `Arc` if enabled, `Rc` otherwise
+☐ CardWidget should mimic actual card layout (counted suit unicode characters in body)
+☐ Create macro for creating widget with documentation
+☐ Use pub(crate)/pub(self)/private wherever required
+☐ Use `ratatui-big-text` where required
+    RoundScore text
+    Chips text
+    Multiplier text
+    Chips unicode symbol
+    Multiply symbol
+☐ Add `level` system for `ScoringHand`
+☐ Add `RunInfoButtonWidget`
+☐ Add mouse support (hover/click)

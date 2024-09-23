@@ -16,13 +16,6 @@ pub const CARD_CONTENT_WIDTH: u16 = 12;
 /// Content height for [`CardWidget`].
 pub const CARD_CONTENT_HEIGHT: u16 = 9;
 
-// TODO: Convert to references with lifetimes and implement Copy on structs
-// wherever possible.
-// TODO: Implement Rc or Arc implementation based on multithreading feature
-// TODO: Implement std or tokio implementation based on tokio feature
-// TODO: Remove unneeded usages of clone()
-// TODO: Explore blanket trait implementation for From over mutability.
-
 /// [`Widget`] to display a [`Card`].
 ///
 /// Widget construction uses builder pattern which can be started using the
@@ -105,7 +98,6 @@ impl StatefulWidget for CardWidget {
         ))
         .left_aligned()
         .render(top_area, buf);
-        // TODO: Mimic actual card suit layout
         TextBoxWidget::new([Line::from(format!(
             "{}{}",
             state.rank.get_display(),

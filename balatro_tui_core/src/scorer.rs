@@ -370,8 +370,6 @@ impl Scorer {
     }
 }
 
-// TODO: Add more tests for core functionality
-
 #[cfg(test)]
 mod tests {
     use super::*;

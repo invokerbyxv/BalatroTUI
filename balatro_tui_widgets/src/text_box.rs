@@ -177,9 +177,6 @@ impl<'widget> TextBoxWidget<'widget> {
     }
 }
 
-// TODO: Re-implement using ratatui-image.
-// TODO: Remove needless clone calls.
-
 impl Widget for TextBoxWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let inner_area = if let Some(mut border_block) = self.border_block {

@@ -122,7 +122,3 @@ impl Round {
         Ok(())
     }
 }
-
-// TODO: Add a scorer animation area.
-// TODO: Remove deep variable access, use accessor functions/split
-// responsibilities.

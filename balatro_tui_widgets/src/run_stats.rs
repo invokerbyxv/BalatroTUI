@@ -60,8 +60,6 @@ impl RunStatsWidget {
     }
 }
 
-// TODO: Rename to game_stats.
-
 impl StatefulWidget for RunStatsWidget {
     type State = RunStatsWidgetState;
 
@@ -82,7 +80,6 @@ impl StatefulWidget for RunStatsWidget {
             Layout::horizontal([Constraint::Fill(1); 2]).areas(round_meta_info_area);
 
         // Render widgets
-        // TODO: Load RunInfoButtonWidget here.
         TextBoxWidget::bordered([Line::from(state.hands.to_string()).centered()])
             .title("Hands")
             .render(hands_count_area, buf);

@@ -58,7 +58,6 @@ impl DeckConstExt for Deck {
 impl DeckExt for Deck {
     #[inline]
     fn shuffle(&mut self) {
-        // TODO: Bias with seed
         self.as_mut_slice().shuffle(&mut thread_rng());
     }
 

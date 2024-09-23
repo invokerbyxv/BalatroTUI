@@ -49,7 +49,6 @@ pub enum StrumError {
 /// Defines errors related to scorer and scoring methods.
 #[derive(Clone, Debug, Error)]
 pub enum ScorerError {
-    // TODO: Remove when infinite ante is implemented.
     /// Signifies that the current `ante` has exceeded the maximum possible
     /// `ante` count of 8.
     #[error("Current ante has crossed maximum computable ante: {0}")]

@@ -87,16 +87,12 @@ impl RoundInfoWidget {
     }
 }
 
-// TODO: Add pub(crate) qualifications
-
 impl Widget for RoundInfoWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         // Prepare variables
         let round_info_content = [
             Line::from("Score at least").centered(),
-            // TODO: Consider using BigText here
             get_line_with_chips(self.target_score.to_string(), Color::Red).centered(),
-            // TODO: Use reward field from round here.
             Line::from(vec![
                 "Reward: ".into(),
                 "$".repeat(self.reward).yellow().bold(),

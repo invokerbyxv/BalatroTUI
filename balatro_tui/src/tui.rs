@@ -112,7 +112,6 @@ impl Drop for Tui {
 /// Installs custom panic hook to work with `color_eyre`, `human_panic` and
 /// `better_panic`.
 fn init_panic_hook() -> Result<()> {
-    // TODO: Use this reporting text with color_eyre as well
     let (panic_hook, eyre_hook) = HookBuilder::default()
         .panic_section(format!(
             "This is a bug. Consider reporting it at {}.",

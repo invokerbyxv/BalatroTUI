@@ -67,7 +67,6 @@ impl BlindBadgeWidget {
 }
 
 impl Widget for BlindBadgeWidget {
-    // TODO: Use image instead of canvas
     fn render(self, area: Rect, buf: &mut Buffer) {
         // Prepare variables
         let bound = f64::from(area.height);

@@ -375,7 +375,6 @@ impl Sortable for [Card] {
         cards
     }
 
-    // TODO: Convert to use entry API once Try conversion handling is added
     fn grouped_by_suit(&self) -> Result<Vec<(Suit, usize)>, ArithmeticError> {
         Ok(self
             .iter()

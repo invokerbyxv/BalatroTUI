@@ -9,7 +9,6 @@ pub(crate) fn get_line_with_chips<'widget, T: Into<Span<'widget>>>(
     color: Color,
 ) -> Line<'widget> {
     Line::from(vec![
-        // TODO: Consider using BigText here
         "\u{26c0}".set_style(Style::new().fg(color)),
         "  ".into(),
         content.into(),
