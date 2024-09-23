@@ -9,6 +9,7 @@ use game::Game;
 
 pub mod event;
 pub mod game;
+pub mod iter_index_ext;
 pub mod tui;
 
 #[tokio::main]

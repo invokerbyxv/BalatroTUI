@@ -24,13 +24,11 @@ use balatro_tui_widgets::{
     RunStatsWidget, RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState,
     SelectableList, WinScreenWidget,
 };
-use bit_set::BitSet;
 use color_eyre::{
     eyre::{bail, Context, OptionExt},
     Result,
 };
 use crossterm::event::{KeyCode, KeyModifiers};
-use itertools::{Either, Itertools};
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
@@ -44,6 +42,7 @@ use ratatui::{
 
 use crate::{
     event::{Event, EventHandler},
+    iter_index_ext::IterIndexExt,
     tui::Tui,
 };
 
@@ -141,12 +140,16 @@ impl Game {
         loop {
             let mut send_result: Result<()> = Ok(());
 
-            let continue_game = self
-                .handle_events(event_handler.next().await?, |event: Event| {
-                    send_result = event_handler.send_event(event)
-                })?;
+            let event = event_handler.next().await?;
+
+            let continue_game = self.handle_game_events(event, |ev: Event| {
+                send_result = event_handler.send_event(ev);
+            })?;
 
             send_result?;
+
+            self.handle_round_events(event)?;
+            self.handle_deck_events(event)?;
 
             let mut draw_result: Result<()> = Ok(());
 
@@ -303,13 +306,13 @@ impl Game {
                             self.run.round.properties.round_number,
                             self.run.round.properties.ante,
                         ),
-                    )
+                    );
                 } else {
                     frame.render_stateful_widget(
                         WinScreenWidget::new(),
                         splash_state_area,
                         &mut self.run.money,
-                    )
+                    );
                 }
             }
         }
@@ -318,11 +321,11 @@ impl Game {
     }
 
     // TODO: Split and move into separate event handler + render traits.
-    /// Centralized event handler working on state
+    /// Event handler for handling game-specific input interface events.
     ///
     /// Returns a [`Result<bool>`] where the boolean value indicates whether to
     /// continue the game loop.
-    fn handle_events<S>(&mut self, event: Event, send: S) -> Result<bool>
+    fn handle_game_events<S>(&mut self, event: Event, send: S) -> Result<bool>
     where
         S: FnOnce(Event),
     {
@@ -355,7 +358,6 @@ impl Game {
                 }
             }
             Event::Key(key_event) => match key_event.code {
-                // Game
                 KeyCode::Esc | KeyCode::Char('q') => {
                     send(Event::Exit);
                 }
@@ -364,7 +366,28 @@ impl Game {
                         send(Event::Exit);
                     }
                 }
-                // Round
+                _ => (),
+            },
+            Event::Resize(x_size, y_size) => {
+                if y_size < 40 || x_size < 150 {
+                    bail!("Terminal size was less than required to render game.");
+                }
+            }
+            Event::Mouse(_) => (),
+            Event::Exit => return Ok(false),
+        }
+
+        Ok(true)
+    }
+
+    /// Event handler for handling round-specific input interface events.
+    fn handle_round_events(&mut self, event: Event) -> Result<()> {
+        #[expect(
+            clippy::wildcard_enum_match_arm,
+            reason = "Intended: Unused events may skip implementation as required."
+        )]
+        if let Event::Key(key_event) = event {
+            match key_event.code {
                 KeyCode::Enter => {
                     if self.run.round.hands_count != 0 {
                         let mut selected = self
@@ -382,7 +405,7 @@ impl Game {
                             )?;
 
                         if selected.is_empty() {
-                            return Ok(true);
+                            return Ok(());
                         }
 
                         self.run.round.play_hand(&mut selected)?;
@@ -414,7 +437,21 @@ impl Game {
                             .set_cards(Arc::<RwLock<Vec<Card>>>::clone(&self.run.round.hand));
                     }
                 }
-                // Deck/Card
+                _ => (),
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Event handler for handling deck-specific input interface events.
+    fn handle_deck_events(&mut self, event: Event) -> Result<()> {
+        #[expect(
+            clippy::wildcard_enum_match_arm,
+            reason = "Intended: Unused events may skip implementation as required."
+        )]
+        if let Event::Key(key_event) = event {
+            match key_event.code {
                 KeyCode::Right => {
                     if let Some(state) = self.card_list_widget_state.as_mut() {
                         state.move_next()?;
@@ -440,62 +477,9 @@ impl Game {
                         .deselect()?;
                 }
                 _ => (),
-            },
-            Event::Resize(x_size, y_size) => {
-                if y_size < 40 || x_size < 150 {
-                    bail!("Terminal size was less than required to render game.");
-                }
             }
-            Event::Exit => return Ok(false),
-            _ => (),
         }
 
-        Ok(true)
-    }
-}
-
-// TODO: Move to utility on crate separation.
-/// Provides methods to perform container/iterator methods based on index hash
-/// set.
-trait HashedContainer
-where
-    Self: IntoIterator + Sized,
-{
-    /// Returns a cloned [`Vec`] based on arbitrary indices set.
-    fn peek_at_index_set(&self, index_set: &BitSet) -> Result<Self>;
-    /// Drains the iterator based on arbitrary indices (see [`Vec::drain()`] for
-    /// equivalent usage with contiguous range) and returns the drained items in
-    /// a [`Vec`].
-    fn drain_from_index_set(&mut self, index_set: &BitSet) -> Result<Self>;
-}
-
-impl HashedContainer for Vec<Card> {
-    fn peek_at_index_set(&self, index_set: &BitSet) -> Result<Self> {
-        index_set
-            .iter()
-            .map(|idx| {
-                self.get(idx)
-                    .copied()
-                    .ok_or_eyre("Invalid index accessed. Index set may be invalid.")
-            })
-            .process_results(|iter| iter.collect())
-    }
-
-    fn drain_from_index_set(&mut self, index_set: &BitSet) -> Result<Self> {
-        let (selected, leftover): (Self, Self) = self
-            .iter()
-            .enumerate()
-            .map(|(idx, &card)| (idx, card))
-            .partition_map(|(idx, card)| {
-                if index_set.contains(idx) {
-                    Either::Left(card)
-                } else {
-                    Either::Right(card)
-                }
-            });
-
-        *self = leftover;
-
-        Ok(selected)
+        Ok(())
     }
 }
