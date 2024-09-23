@@ -172,11 +172,13 @@ impl Blind {
             .checked_mul(boss_blind_multiplier)
             .ok_or(ArithmeticError::Overflow("multiplication"))?
             .checked_mul(
-                BLIND_BASE_AMOUNTS
-                    .get(ante.get())
-                    .ok_or_else(|| ScorerError::AnteExceeded(ante.get()))?
-                    .checked_sub(1)
-                    .ok_or(ArithmeticError::Overflow("subtraction"))?,
+                *BLIND_BASE_AMOUNTS
+                    .get(
+                        ante.get()
+                            .checked_sub(1)
+                            .ok_or(ArithmeticError::Overflow("subtraction"))?,
+                    )
+                    .ok_or_else(|| ScorerError::AnteExceeded(ante.get()))?,
             )
             .ok_or(ArithmeticError::Overflow("multiplication"))?)
     }
