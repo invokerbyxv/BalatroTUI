@@ -39,6 +39,7 @@ pub const CARD_CONTENT_HEIGHT: u16 = 9;
 /// border is set to [`border::ROUNDED`].
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CardWidget {
+    /// Type of border to display on card
     border_set: Set,
 }
 

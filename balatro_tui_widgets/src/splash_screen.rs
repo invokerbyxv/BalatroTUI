@@ -36,7 +36,9 @@ const QUADRANT_PIXEL_WIDTH: usize = 4;
 /// ```
 #[derive(Copy, Clone, Debug, Default)]
 pub struct SplashScreenWidget<'widget> {
+    /// Text to be displayed as title of the splash screen.
     splash: &'widget str,
+    /// Supporting message text to be displayed on the splash screen.
     message: &'widget str,
 }
 
@@ -44,8 +46,11 @@ impl<'widget> SplashScreenWidget<'widget> {
     /// Create new instance of [`SplashScreenWidget`].
     #[must_use = "Created splash screen widget state instance must be used."]
     #[inline]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            splash: "",
+            message: ""
+        }
     }
 
     /// Update the splash text and return the [`SplashScreenWidget`] instance.

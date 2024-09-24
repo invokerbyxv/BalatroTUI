@@ -38,18 +38,27 @@ const KERNING_MULTIPLIER: u16 = 2;
 /// ```
 #[derive(Clone, Debug, Default)]
 pub struct RoundInfoWidget {
+    /// Text to show on blind bade
     blind_text: String,
+    /// Color of blind badge
     blind_color: Color,
-    target_score: usize,
+    /// Reward for clearing the blind
     reward: usize,
+    /// Target score required to clear the blind
+    target_score: usize,
 }
 
 impl RoundInfoWidget {
     /// Create new instance of [`RoundInfoWidget`]
     #[must_use = "Created round info widget instance must be used."]
     #[inline]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            blind_color: Color::White,
+            blind_text: String::new(),
+            reward: 0,
+            target_score: 0,
+        }
     }
 
     /// Update the text to be used for blind and return the [`RoundInfoWidget`]
