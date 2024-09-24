@@ -11,7 +11,7 @@ use ratatui::{
 /// [`Self::new()`] method.
 ///
 /// ```
-/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::*, text::Line};
+/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::Widget, text::Line};
 /// # use balatro_tui_widgets::TextBoxWidget;
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
@@ -25,7 +25,7 @@ use ratatui::{
 /// content.
 ///
 /// ```
-/// # use ratatui::{buffer::Buffer, layout::{Constraint, Flex, Rect}, prelude::*, text::Line, widgets::{Block, BorderType}};
+/// # use ratatui::{buffer::Buffer, layout::{Constraint, Flex, Rect}, prelude::Widget, text::Line, widgets::{Block, BorderType}};
 /// # use balatro_tui_widgets::TextBoxWidget;
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
@@ -43,7 +43,7 @@ use ratatui::{
 /// shorthand to create bordered text boxes.
 ///
 /// ```
-/// # use ratatui::{buffer::Buffer, layout::{Flex, Rect}, prelude::*, text::Line};
+/// # use ratatui::{buffer::Buffer, layout::{Constraint, Flex, Rect}, prelude::Widget, text::Line};
 /// # use balatro_tui_widgets::TextBoxWidget;
 /// let area = Rect::new(0, 0, 100, 100);
 /// let mut buffer = Buffer::empty(area);
@@ -79,9 +79,7 @@ impl<'widget> TextBoxWidget<'widget> {
     #[inline]
     pub fn new<C>(content: C) -> Self
     where
-        C: IntoIterator,
-        C::Item: Into<Line<'widget>> + Widget,
-        Vec<Line<'widget>>: From<C>,
+        C: Into<Vec<Line<'widget>>>,
     {
         TextBoxWidget {
             padding: 1,
@@ -100,9 +98,7 @@ impl<'widget> TextBoxWidget<'widget> {
     #[inline]
     pub fn bordered<C>(content: C) -> Self
     where
-        C: IntoIterator,
-        C::Item: Into<Line<'widget>> + Widget,
-        Vec<Line<'widget>>: From<C>,
+        C: Into<Vec<Line<'widget>>>,
     {
         let mut text_box = Self::new(content);
         text_box.border_block = Some(Block::bordered().border_type(BorderType::Rounded));

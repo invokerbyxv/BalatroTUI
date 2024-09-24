@@ -20,9 +20,9 @@ use balatro_tui_core::{
     scorer::Scorer,
 };
 use balatro_tui_widgets::{
-    CardListWidget, CardListWidgetState, GameOverWidget, RoundInfoWidget, RoundScoreWidget,
-    RunStatsWidget, RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState,
-    SelectableList, WinScreenWidget,
+    CardListWidget, CardListWidgetState, RoundInfoWidget, RoundScoreWidget, RunStatsWidget,
+    RunStatsWidgetState, ScorerPreviewWidget, ScorerPreviewWidgetState, SelectableList,
+    SplashScreenWidget,
 };
 use color_eyre::{
     eyre::{bail, Context, OptionExt},
@@ -139,7 +139,7 @@ impl Game {
 
             let event = event_handler.next().await?;
 
-            let continue_game = self.handle_game_events(event, |ev: Event| {
+            let continue_game = Self::evaluate_exit(event, |ev: Event| {
                 send_result = event_handler.send_event(ev);
             })?;
 
@@ -298,18 +298,28 @@ impl Game {
             RunState::Finished(win) => {
                 if win {
                     frame.render_stateful_widget(
-                        GameOverWidget::new(),
+                        SplashScreenWidget::new()
+                            .splash("Congratulations!")
+                            .message("You won the game!"),
                         splash_state_area,
-                        &mut (
-                            self.run.round.properties.round_number,
-                            self.run.round.properties.ante,
-                        ),
+                        &mut vec![("Money collected", &self.run.money.to_string())],
                     );
                 } else {
                     frame.render_stateful_widget(
-                        WinScreenWidget::new(),
+                        SplashScreenWidget::new()
+                            .splash("Game Over")
+                            .message("You lost the game!"),
                         splash_state_area,
-                        &mut self.run.money,
+                        &mut vec![
+                            (
+                                "Last round reached",
+                                &self.run.round.properties.round_number.to_string(),
+                            ),
+                            (
+                                "Last ante reached",
+                                &self.run.round.properties.ante.to_string(),
+                            ),
+                        ],
                     );
                 }
             }
@@ -322,7 +332,7 @@ impl Game {
     ///
     /// Returns a [`Result<bool>`] where the boolean value indicates whether to
     /// continue the game loop.
-    fn handle_game_events<S>(&mut self, event: Event, send: S) -> Result<bool>
+    fn evaluate_exit<S>(event: Event, send: S) -> Result<bool>
     where
         S: FnOnce(Event),
     {
@@ -344,7 +354,9 @@ impl Game {
             },
             Event::Resize(x_size, y_size) => {
                 if y_size < 40 || x_size < 150 {
-                    bail!("Terminal size was less than required to render game.");
+                    bail!(
+                        "Terminal size was less than required to render game. Need at least 150x40 character screen to render."
+                    );
                 }
             }
             Event::Exit => return Ok(false),
@@ -356,11 +368,7 @@ impl Game {
 
     /// Event handler for handling run-specific input interface events.
     fn handle_run_events(&mut self, event: Event) -> Result<()> {
-        #[expect(
-            clippy::wildcard_enum_match_arm,
-            reason = "Intended: Unused events may skip implementation as required."
-        )]
-        if let Event::Tick = event {
+        if event == Event::Tick {
             if self.run.round.hands_count == 0
                 && self.run.round.score
                     < self
@@ -385,7 +393,6 @@ impl Game {
 
         Ok(())
     }
-
 
     /// Event handler for handling round-specific input interface events.
     fn handle_round_events(&mut self, event: Event) -> Result<()> {
@@ -437,6 +444,11 @@ impl Game {
                                     .ok_or_eyre("Card list widget state not initialized yet.")?
                                     .selected,
                             )?;
+
+                        if selected.is_empty() {
+                            return Ok(());
+                        }
+
                         self.run.round.discard_hand(&mut selected)?;
                         self.card_list_widget_state
                             .as_mut()

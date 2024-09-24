@@ -375,6 +375,11 @@ impl Sortable for [Card] {
         cards
     }
 
+    #[expect(
+        clippy::unwrap_used,
+        clippy::unwrap_in_result,
+        reason = "Refactor: Cannot propagate error out of `HashMap::and_modify`"
+    )]
     fn grouped_by_suit(&self) -> Result<Vec<(Suit, usize)>, ArithmeticError> {
         Ok(self
             .iter()
@@ -396,6 +401,11 @@ impl Sortable for [Card] {
             .collect())
     }
 
+    #[expect(
+        clippy::unwrap_used,
+        clippy::unwrap_in_result,
+        reason = "Refactor: Cannot propagate error out of `HashMap::and_modify`"
+    )]
     fn grouped_by_rank(&self) -> Result<Vec<(Rank, usize)>, ArithmeticError> {
         Ok(self
             .iter()

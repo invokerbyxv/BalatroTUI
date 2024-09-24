@@ -191,7 +191,7 @@ impl SelectableList for CardListWidgetState {
 ///
 /// ```
 /// # use std::sync::{Arc, RwLock};
-/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::*};
+/// # use ratatui::{buffer::Buffer, layout::Rect, prelude::StatefulWidget};
 /// # use balatro_tui_core::card::{Card, Rank, Suit};
 /// # use balatro_tui_widgets::{CardListWidget, CardListWidgetState};
 /// let area = Rect::new(0, 0, 100, 100);
